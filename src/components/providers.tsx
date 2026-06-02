@@ -4,13 +4,13 @@ import { ThemeProvider } from "next-themes";
 import { Toaster } from "sonner";
 import { ServiceWorkerRegister } from "@/components/pwa/service-worker-register";
 
-/** Providers globales del lado cliente: tema (claro/oscuro) y toasts. */
+/** Providers globales del lado cliente: tema light-first y toasts. */
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <ThemeProvider
       attribute="class"
-      defaultTheme="system"
-      enableSystem
+      defaultTheme="light"
+      enableSystem={false}
       disableTransitionOnChange
     >
       {children}

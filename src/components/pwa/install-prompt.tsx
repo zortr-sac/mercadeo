@@ -9,20 +9,17 @@ interface BeforeInstallPromptEvent extends Event {
   userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
 }
 
-const DISMISS_KEY = "hgw-install-dismissed";
+const DISMISS_KEY = "nexo-install-dismissed";
 
-/** Banner de instalación (A2HS) para Chrome/Edge/Android. */
 export function InstallPrompt() {
-  const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(
-    null,
-  );
+  const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null);
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
     if (localStorage.getItem(DISMISS_KEY)) return;
-    const handler = (e: Event) => {
-      e.preventDefault();
-      setDeferred(e as BeforeInstallPromptEvent);
+    const handler = (event: Event) => {
+      event.preventDefault();
+      setDeferred(event as BeforeInstallPromptEvent);
       setVisible(true);
     };
     window.addEventListener("beforeinstallprompt", handler);
@@ -46,7 +43,7 @@ export function InstallPrompt() {
 
   return (
     <div
-      className="fixed inset-x-3 z-40 mx-auto max-w-md rounded-[var(--radius-lg)] border border-border bg-card p-4 shadow-lg lg:left-auto lg:right-6 lg:mx-0"
+      className="fixed inset-x-3 z-40 mx-auto max-w-md rounded-lg border border-border bg-card p-4 shadow-lg lg:left-auto lg:right-6 lg:mx-0"
       style={{ bottom: "calc(5rem + var(--safe-bottom))" }}
     >
       <button
@@ -54,17 +51,17 @@ export function InstallPrompt() {
         className="absolute right-2 top-2 rounded-full p-1 text-muted-foreground hover:bg-muted"
         aria-label="Descartar"
       >
-        <X className="size-4" />
+        <X className="size-5" />
       </button>
       <div className="flex items-start gap-3">
-        <span className="flex size-11 shrink-0 items-center justify-center rounded-[var(--radius-md)] gradient-brand text-white">
+        <span className="flex size-11 shrink-0 items-center justify-center rounded-lg gradient-brand text-white">
           <Download className="size-5" />
         </span>
         <div className="flex-1">
-          <p className="text-sm font-semibold">Instala HGW</p>
-          <p className="text-xs text-muted-foreground">
-            Añádela a tu pantalla de inicio para acceso rápido y uso sin
-            conexión.
+          <p className="font-semibold">Instala Nexo Mentor</p>
+          <p className="text-muted-foreground">
+            Anade la PWA a tu pantalla de inicio para acceso rapido y uso sin
+            conexion.
           </p>
           <div className="mt-3 flex gap-2">
             <Button size="sm" onClick={install}>

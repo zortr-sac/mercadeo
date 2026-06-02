@@ -28,6 +28,6 @@ export const useProgressStore = create<ProgressState>()(
       countCompleted: (lessonIds) =>
         lessonIds.filter((id) => get().completed[id]).length,
     }),
-    { name: "hgw-progress" },
+    { name: "nexo-progress" },
   ),
 );

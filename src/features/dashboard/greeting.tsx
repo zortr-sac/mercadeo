@@ -1,28 +1,23 @@
 "use client";
 
-import { useEffect, useState } from "react";
+function getGreeting() {
+  const hour = new Date().getHours();
+  if (hour < 12) return "Buenos dias";
+  if (hour < 19) return "Buenas tardes";
+  return "Buenas noches";
+}
 
-/** Saludo dinámico según la hora del día (cliente, evita desajuste SSR). */
 export function DashboardGreeting({ name }: { name: string }) {
-  const [greeting, setGreeting] = useState("Hola");
-
-  useEffect(() => {
-    const h = new Date().getHours();
-    if (h < 12) setGreeting("Buenos días");
-    else if (h < 19) setGreeting("Buenas tardes");
-    else setGreeting("Buenas noches");
-  }, []);
-
   const firstName = name.split(" ")[0];
 
   return (
     <div>
-      <p className="text-sm text-muted-foreground">{greeting},</p>
+      <p className="text-muted-foreground">{getGreeting()},</p>
       <h1 className="font-display text-2xl font-bold tracking-tight">
-        {firstName} 👋
+        {firstName}
       </h1>
-      <p className="mt-1 text-sm text-muted-foreground">
-        ¿Listo para duplicar hoy? Tu equipo cuenta contigo.
+      <p className="mt-1 text-muted-foreground">
+        Revisa tus seguimientos y usa mensajes responsables.
       </p>
     </div>
   );

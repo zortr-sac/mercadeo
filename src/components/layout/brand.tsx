@@ -1,6 +1,6 @@
+import { APP } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
-/** Isotipo + wordmark de HGW. */
 export function Brand({
   className,
   showText = true,
@@ -10,16 +10,16 @@ export function Brand({
 }) {
   return (
     <span className={cn("flex items-center gap-2.5", className)}>
-      <span className="flex size-9 items-center justify-center rounded-xl gradient-brand font-display text-sm font-extrabold text-white shadow-sm">
-        HG
+      <span className="flex size-10 items-center justify-center rounded-lg gradient-brand font-display text-base font-extrabold text-white shadow-sm">
+        NX
       </span>
       {showText && (
-        <span className="flex flex-col leading-none">
-          <span className="font-display text-base font-bold tracking-tight">
-            HGW
+        <span className="flex flex-col leading-tight">
+          <span className="font-display text-lg font-bold tracking-tight">
+            {APP.shortName}
           </span>
-          <span className="text-[0.65rem] font-medium uppercase tracking-wider text-muted-foreground">
-            Líderes
+          <span className="font-medium uppercase tracking-wide text-muted-foreground">
+            Mentor
           </span>
         </span>
       )}

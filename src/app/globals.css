@@ -1,89 +1,106 @@
 @import "tailwindcss";
 
 /* ============================================================
-   HGW — DESIGN TOKENS (Tailwind v4)
-   Marca: Azul confianza + Dorado prosperidad. Tema claro/oscuro.
+   Nexo Mentor - design tokens
+   Light-first, clear typography, large touch targets.
    ============================================================ */
 
 @theme {
-  /* ---------- Marca: Azul confianza ---------- */
-  --color-brand-50: #eff6ff;
-  --color-brand-100: #dbeafe;
-  --color-brand-200: #bfdbfe;
-  --color-brand-300: #93c5fd;
-  --color-brand-400: #60a5fa;
-  --color-brand-500: #3b82f6;
-  --color-brand-600: #2563eb;
-  --color-brand-700: #1d4ed8;
-  --color-brand-800: #1e40af;
-  --color-brand-900: #1e3a8a;
-  --color-brand-950: #172554;
+  --color-brand-50: #ecfdf5;
+  --color-brand-100: #d1fae5;
+  --color-brand-200: #a7f3d0;
+  --color-brand-300: #6ee7b7;
+  --color-brand-400: #34d399;
+  --color-brand-500: #10b981;
+  --color-brand-600: #0f766e;
+  --color-brand-700: #0f5f59;
+  --color-brand-800: #134e4a;
+  --color-brand-900: #0f3f3c;
+  --color-brand-950: #042f2e;
 
-  /* ---------- Acento: Dorado prosperidad ---------- */
   --color-gold-50: #fffbeb;
   --color-gold-100: #fef3c7;
   --color-gold-200: #fde68a;
   --color-gold-300: #fcd34d;
-  --color-gold-400: #fbbf24;
-  --color-gold-500: #f59e0b;
-  --color-gold-600: #d97706;
-  --color-gold-700: #b45309;
-  --color-gold-800: #92400e;
-  --color-gold-900: #78350f;
+  --color-gold-400: #f59e0b;
+  --color-gold-500: #d97706;
+  --color-gold-600: #b45309;
+  --color-gold-700: #92400e;
+  --color-gold-800: #78350f;
+  --color-gold-900: #451a03;
 
-  /* ---------- Tipografía ---------- */
+  --color-ink-50: #f8fafc;
+  --color-ink-100: #f1f5f9;
+  --color-ink-200: #e2e8f0;
+  --color-ink-300: #cbd5e1;
+  --color-ink-400: #94a3b8;
+  --color-ink-500: #64748b;
+  --color-ink-600: #475569;
+  --color-ink-700: #334155;
+  --color-ink-800: #1e293b;
+  --color-ink-900: #0f172a;
+
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --font-display: var(--font-display), var(--font-inter), sans-serif;
+
+  --text-xs: 1rem;
+  --text-sm: 1rem;
+  --text-base: 1.0625rem;
+  --text-lg: 1.25rem;
+  --text-xl: 1.5rem;
+  --text-2xl: 1.875rem;
+  --text-3xl: 2.25rem;
 }
 
-/* Tokens semánticos (cambian con .dark) */
 :root {
-  --background: #f8fafc;
-  --foreground: #0f172a;
+  --background: #f6f8f7;
+  --foreground: #111827;
   --card: #ffffff;
-  --card-foreground: #0f172a;
-  --muted: #f1f5f9;
-  --muted-foreground: #64748b;
-  --border: #e2e8f0;
-  --input: #e2e8f0;
-  --ring: #2563eb;
-  --primary: #2563eb;
+  --card-foreground: #111827;
+  --muted: #eef2f1;
+  --muted-foreground: #52605d;
+  --border: #d8e0dd;
+  --input: #d8e0dd;
+  --ring: #0f766e;
+  --primary: #0f766e;
   --primary-foreground: #ffffff;
-  --secondary: #f1f5f9;
-  --secondary-foreground: #0f172a;
+  --secondary: #eff4f3;
+  --secondary-foreground: #111827;
   --accent: #f59e0b;
-  --accent-foreground: #1e293b;
+  --accent-foreground: #1f2937;
   --destructive: #dc2626;
   --destructive-foreground: #ffffff;
-  --success: #16a34a;
+  --success: #16803c;
   --success-foreground: #ffffff;
-  --radius: 0.75rem;
+  --warning: #b45309;
+  --warning-foreground: #ffffff;
+  --radius: 0.5rem;
 }
 
 .dark {
-  --background: #0b1120;
-  --foreground: #e2e8f0;
-  --card: #0f172a;
-  --card-foreground: #e2e8f0;
-  --muted: #1e293b;
-  --muted-foreground: #94a3b8;
-  --border: #1e293b;
-  --input: #1e293b;
-  --ring: #3b82f6;
-  --primary: #3b82f6;
-  --primary-foreground: #ffffff;
-  --secondary: #1e293b;
-  --secondary-foreground: #e2e8f0;
-  --accent: #fbbf24;
-  --accent-foreground: #0f172a;
+  --background: #101614;
+  --foreground: #e8eeec;
+  --card: #151d1b;
+  --card-foreground: #e8eeec;
+  --muted: #1f2a27;
+  --muted-foreground: #a8b4b0;
+  --border: #2b3734;
+  --input: #2b3734;
+  --ring: #34d399;
+  --primary: #34d399;
+  --primary-foreground: #042f2e;
+  --secondary: #1f2a27;
+  --secondary-foreground: #e8eeec;
+  --accent: #fcd34d;
+  --accent-foreground: #1f2937;
   --destructive: #ef4444;
   --destructive-foreground: #ffffff;
   --success: #22c55e;
   --success-foreground: #052e16;
-  --radius: 0.75rem;
+  --warning: #f59e0b;
+  --warning-foreground: #1f2937;
 }
 
-/* Mapeo de vars semánticas a utilidades Tailwind (bg-background, text-foreground, ...) */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -104,9 +121,11 @@
   --color-destructive-foreground: var(--destructive-foreground);
   --color-success: var(--success);
   --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
   --radius-lg: var(--radius);
-  --radius-md: calc(var(--radius) - 0.25rem);
-  --radius-sm: calc(var(--radius) - 0.5rem);
+  --radius-md: var(--radius);
+  --radius-sm: calc(var(--radius) - 0.125rem);
 }
 
 * {
@@ -115,18 +134,25 @@
 
 html {
   -webkit-tap-highlight-color: transparent;
+  font-size: 16px;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
-  /* Soporte de áreas seguras (notch / barra inferior) para PWA instalada */
+  font-size: 1rem;
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --safe-top: env(safe-area-inset-top, 0px);
 }
 
-/* Scrollbar discreta */
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
 @media (pointer: fine) {
   ::-webkit-scrollbar {
     width: 10px;
@@ -140,15 +166,17 @@ body {
   }
 }
 
-/* Utilidades de marca reutilizables */
 @layer utilities {
   .text-balance {
     text-wrap: balance;
   }
   .gradient-brand {
-    background-image: linear-gradient(135deg, var(--color-brand-600), var(--color-brand-800));
+    background-image: linear-gradient(135deg, #0f766e, #164e63);
   }
   .gradient-gold {
-    background-image: linear-gradient(135deg, var(--color-gold-400), var(--color-gold-600));
+    background-image: linear-gradient(135deg, #fcd34d, #d97706);
+  }
+  .surface-line {
+    box-shadow: inset 0 -1px 0 var(--border);
   }
 }

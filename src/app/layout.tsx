@@ -20,14 +20,14 @@ const poppins = Poppins({
 export const metadata: Metadata = {
   applicationName: APP.name,
   title: {
-    default: `${APP.fullName} — Formación y Duplicación`,
+    default: `${APP.fullName} - Academia, CRM y copiloto IA`,
     template: `%s · ${APP.name}`,
   },
   description: APP.description,
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
-    statusBarStyle: "black-translucent",
+    statusBarStyle: "default",
     title: APP.name,
   },
   formatDetection: { telephone: false },
@@ -38,10 +38,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f8fafc" },
-    { media: "(prefers-color-scheme: dark)", color: "#0b1120" },
-  ],
+  themeColor: APP.themeColor,
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,

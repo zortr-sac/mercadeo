@@ -90,7 +90,7 @@ export function Markdown({
   const html = (s: string) => ({ __html: inline(escapeHtml(s)) });
 
   return (
-    <div className={cn("space-y-3 text-[0.95rem] leading-relaxed", className)}>
+    <div className={cn("space-y-3 leading-relaxed", className)}>
       {blocks.map((b, idx) => {
         switch (b.kind) {
           case "h2":

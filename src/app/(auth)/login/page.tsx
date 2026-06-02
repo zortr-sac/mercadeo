@@ -1,38 +1,50 @@
 import type { Metadata } from "next";
-import { getRepositories } from "@/data";
-import { APP } from "@/lib/constants";
+import { ShieldCheck } from "lucide-react";
+import { APP, LEGAL_DISCLAIMERS } from "@/lib/constants";
 import { LoginForm } from "./login-form";
 
-export const metadata: Metadata = { title: "Iniciar sesión" };
+export const metadata: Metadata = { title: "Iniciar sesion" };
 
-export default async function LoginPage() {
-  const users = await getRepositories().users.listDemoUsers();
-
+export default function LoginPage() {
   return (
-    <div className="w-full max-w-sm">
+    <div className="w-full max-w-md">
       <div className="mb-8 text-center text-white">
-        <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-2xl bg-white/15 font-display text-2xl font-extrabold backdrop-blur">
-          HG
+        <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-lg bg-white text-[#0f2f2c] font-display text-2xl font-extrabold">
+          NX
         </div>
-        <h1 className="font-display text-2xl font-bold">{APP.fullName}</h1>
-        <p className="mt-1 text-sm text-white/80">
-          Formación, información y duplicación para tu equipo.
+        <h1 className="font-display text-3xl font-bold">{APP.fullName}</h1>
+        <p className="mt-3 text-white/85">
+          Academia, CRM simple, mensajes con IA y recordatorios para vendedores.
         </p>
       </div>
 
-      <div className="rounded-2xl bg-card p-5 shadow-xl">
-        <h2 className="mb-1 font-display text-lg font-semibold">
-          Elige tu perfil
-        </h2>
-        <p className="mb-4 text-sm text-muted-foreground">
-          Modo demostración: selecciona un usuario para explorar la plataforma.
+      <div className="rounded-lg bg-card p-6 shadow-xl">
+        <h2 className="mb-1 font-display text-xl font-semibold">Inicia sesión</h2>
+        <p className="mb-5 text-muted-foreground">
+          Ingresa con el correo y la contraseña de tu cuenta.
         </p>
-        <LoginForm users={users} />
+        <LoginForm />
+
+        <div className="mt-5 flex items-start gap-3 rounded-lg border border-brand-100 bg-brand-50 p-3 text-brand-900">
+          <ShieldCheck className="mt-0.5 size-5 shrink-0" />
+          <p className="leading-relaxed">{LEGAL_DISCLAIMERS.sales}</p>
+        </div>
       </div>
 
-      <p className="mt-6 text-center text-xs text-white/70">
-        © {new Date().getFullYear()} {APP.name}. Uso interno.
-      </p>
+      <div className="mt-6 text-center text-white/75">
+        <p>
+          © {new Date().getFullYear()} {APP.name}. Producto educativo y de
+          productividad.
+        </p>
+        <p className="mt-2 flex justify-center gap-4">
+          <a href="/terminos" className="underline hover:text-white">
+            Términos
+          </a>
+          <a href="/privacidad" className="underline hover:text-white">
+            Privacidad
+          </a>
+        </p>
+      </div>
     </div>
   );
 }

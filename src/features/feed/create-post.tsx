@@ -25,7 +25,7 @@ export function CreatePostButton() {
   useEffect(() => {
     if (state.ok) {
       toast.success("Publicación creada.");
-      setOpen(false);
+      queueMicrotask(() => setOpen(false));
       router.refresh();
     } else if (state.error) {
       toast.error(state.error);

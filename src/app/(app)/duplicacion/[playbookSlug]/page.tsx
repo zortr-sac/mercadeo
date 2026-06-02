@@ -9,7 +9,10 @@ import { PLAYBOOK_TYPE_LABELS } from "@/data/types";
 import { ROUTES } from "@/lib/constants";
 import { minutesLabel } from "@/lib/format";
 import { requireSession } from "@/lib/session";
-import { resolveIcon } from "@/features/duplication/icon-map";
+import {
+  FALLBACK_PLAYBOOK_ICON,
+  PLAYBOOK_ICONS,
+} from "@/features/duplication/icon-map";
 import { StepList } from "@/features/duplication/step-list";
 
 export async function generateMetadata({
@@ -18,8 +21,10 @@ export async function generateMetadata({
   params: Promise<{ playbookSlug: string }>;
 }): Promise<Metadata> {
   const { playbookSlug } = await params;
-  const pb = await getRepositories().duplication.getPlaybookBySlug(playbookSlug);
-  return { title: pb?.title ?? "Ruta guiada" };
+  const playbook = await getRepositories().duplication.getPlaybookBySlug(
+    playbookSlug,
+  );
+  return { title: playbook?.title ?? "Ruta guiada" };
 }
 
 export default async function PlaybookPage({
@@ -29,43 +34,50 @@ export default async function PlaybookPage({
 }) {
   await requireSession();
   const { playbookSlug } = await params;
-  const pb = await getRepositories().duplication.getPlaybookBySlug(playbookSlug);
-  if (!pb) notFound();
+  const playbook = await getRepositories().duplication.getPlaybookBySlug(
+    playbookSlug,
+  );
+  if (!playbook) notFound();
 
-  const Icon = resolveIcon(pb.icon);
-  const totalMin = pb.steps.reduce((sum, s) => sum + (s.durationMinutes ?? 0), 0);
+  const Icon = PLAYBOOK_ICONS[playbook.icon] ?? FALLBACK_PLAYBOOK_ICON;
+  const totalMin = playbook.steps.reduce(
+    (sum, step) => sum + (step.durationMinutes ?? 0),
+    0,
+  );
 
   return (
     <Container>
       <Link
         href={ROUTES.duplicacion}
-        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
+        className="inline-flex items-center gap-2 text-muted-foreground transition-colors hover:text-foreground"
       >
-        <ArrowLeft className="size-4" />
-        Volver a Duplicación
+        <ArrowLeft className="size-5" />
+        Volver al sistema comercial
       </Link>
 
       <div className="mt-4 flex items-start gap-4">
-        <span className="flex size-14 shrink-0 items-center justify-center rounded-[var(--radius-lg)] gradient-brand text-white">
+        <span className="flex size-14 shrink-0 items-center justify-center rounded-lg gradient-brand text-white">
           <Icon className="size-7" />
         </span>
         <div>
-          <Badge variant={pb.type === "business" ? "default" : "gold"}>
-            {PLAYBOOK_TYPE_LABELS[pb.type]}
+          <Badge variant={playbook.type === "business" ? "default" : "gold"}>
+            {PLAYBOOK_TYPE_LABELS[playbook.type]}
           </Badge>
-          <h1 className="mt-1.5 font-display text-2xl font-bold">{pb.title}</h1>
-          <p className="mt-1 text-muted-foreground">{pb.description}</p>
+          <h1 className="mt-2 font-display text-2xl font-bold">
+            {playbook.title}
+          </h1>
+          <p className="mt-2 text-muted-foreground">{playbook.description}</p>
           {totalMin > 0 && (
-            <p className="mt-2 flex items-center gap-1.5 text-sm text-muted-foreground">
-              <Clock className="size-4" />
-              Duración estimada: {minutesLabel(totalMin)}
+            <p className="mt-3 flex items-center gap-2 text-muted-foreground">
+              <Clock className="size-5" />
+              Duracion estimada: {minutesLabel(totalMin)}
             </p>
           )}
         </div>
       </div>
 
       <div className="mt-8">
-        <StepList playbookId={pb.id} steps={pb.steps} />
+        <StepList playbookId={playbook.id} steps={playbook.steps} />
       </div>
     </Container>
   );

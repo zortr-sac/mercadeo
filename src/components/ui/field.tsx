@@ -17,17 +17,27 @@ export function Label({
 
 export function Input({
   className,
+  ref,
   ...props
-}: React.InputHTMLAttributes<HTMLInputElement>) {
-  return <input className={cn(baseField, "h-11", className)} {...props} />;
+}: React.InputHTMLAttributes<HTMLInputElement> & {
+  ref?: React.Ref<HTMLInputElement>;
+}) {
+  return <input ref={ref} className={cn(baseField, "h-11", className)} {...props} />;
 }
 
 export function Textarea({
   className,
+  ref,
   ...props
-}: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
+}: React.TextareaHTMLAttributes<HTMLTextAreaElement> & {
+  ref?: React.Ref<HTMLTextAreaElement>;
+}) {
   return (
-    <textarea className={cn(baseField, "min-h-24 py-2.5", className)} {...props} />
+    <textarea
+      ref={ref}
+      className={cn(baseField, "min-h-24 py-2.5", className)}
+      {...props}
+    />
   );
 }
 

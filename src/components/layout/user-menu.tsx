@@ -31,6 +31,7 @@ export function UserMenu() {
         className="flex items-center gap-2 rounded-full p-1 pr-2 transition-colors hover:bg-muted"
         aria-haspopup="menu"
         aria-expanded={open}
+        aria-label={`Menú de ${user.fullName}`}
       >
         <Avatar name={user.fullName} src={user.avatarUrl} size="sm" />
         <ChevronDown className="size-4 text-muted-foreground" />

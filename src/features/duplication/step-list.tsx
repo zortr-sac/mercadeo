@@ -25,7 +25,7 @@ const useStepStore = create<StepState>()(
           return { done: next };
         }),
     }),
-    { name: "hgw-playbook-steps" },
+    { name: "nexo-playbook-steps" },
   ),
 );
 

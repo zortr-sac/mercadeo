@@ -1,7 +1,7 @@
 "use client";
 
 import { Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Select, Textarea } from "@/components/ui/field";
@@ -15,42 +15,47 @@ import {
   type ProspectInterest,
   type ProspectStage,
 } from "@/data/types";
-import { useProspectsStore } from "@/store/prospects-store";
+import {
+  createProspectAction,
+  deleteProspectAction,
+  updateProspectAction,
+} from "./prospect-actions";
 
-/** Formulario de creación/edición de prospecto. */
 export function ProspectForm({
-  ownerId,
   prospect,
+  onSaved,
+  onDeleted,
   onClose,
 }: {
   ownerId: string;
+  businessId: string | null;
   prospect?: Prospect;
+  onSaved: (prospect: Prospect) => void;
+  onDeleted?: (id: string) => void;
   onClose: () => void;
 }) {
-  const add = useProspectsStore((s) => s.add);
-  const update = useProspectsStore((s) => s.update);
-  const remove = useProspectsStore((s) => s.remove);
   const isEdit = Boolean(prospect);
+  const [pending, startTransition] = useTransition();
 
   const [name, setName] = useState(prospect?.name ?? "");
   const [phone, setPhone] = useState(prospect?.phone ?? "");
   const [email, setEmail] = useState(prospect?.email ?? "");
   const [stage, setStage] = useState<ProspectStage>(prospect?.stage ?? "new");
   const [interest, setInterest] = useState<ProspectInterest>(
-    prospect?.interest ?? "business",
+    prospect?.interest ?? "product",
   );
   const [notes, setNotes] = useState(prospect?.notes ?? "");
   const [nextAction, setNextAction] = useState(
     prospect?.nextActionAt ? prospect.nextActionAt.slice(0, 16) : "",
   );
 
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  function handleSubmit(event: React.FormEvent) {
+    event.preventDefault();
     if (name.trim().length < 2) {
       toast.error("Escribe el nombre del prospecto.");
       return;
     }
-    const payload = {
+    const draft = {
       name: name.trim(),
       phone: phone.trim() || null,
       email: email.trim() || null,
@@ -59,22 +64,33 @@ export function ProspectForm({
       notes: notes.trim(),
       nextActionAt: nextAction ? new Date(nextAction).toISOString() : null,
     };
-    if (isEdit && prospect) {
-      update(prospect.id, payload);
-      toast.success("Prospecto actualizado.");
-    } else {
-      add(ownerId, payload);
-      toast.success("Prospecto agregado.");
-    }
-    onClose();
+    startTransition(async () => {
+      try {
+        const saved =
+          isEdit && prospect
+            ? await updateProspectAction(prospect.id, draft)
+            : await createProspectAction(draft);
+        onSaved(saved);
+        toast.success(isEdit ? "Prospecto actualizado." : "Prospecto agregado.");
+        onClose();
+      } catch {
+        toast.error("No se pudo guardar el prospecto.");
+      }
+    });
   }
 
   function handleDelete() {
-    if (prospect) {
-      remove(prospect.id);
-      toast.success("Prospecto eliminado.");
-      onClose();
-    }
+    if (!prospect) return;
+    startTransition(async () => {
+      try {
+        await deleteProspectAction(prospect.id);
+        onDeleted?.(prospect.id);
+        toast.success("Prospecto eliminado.");
+        onClose();
+      } catch {
+        toast.error("No se pudo eliminar el prospecto.");
+      }
+    });
   }
 
   return (
@@ -82,25 +98,26 @@ export function ProspectForm({
       open
       onClose={onClose}
       title={isEdit ? "Editar prospecto" : "Nuevo prospecto"}
-      description="Registra los datos y la siguiente acción de seguimiento."
+      description="Registra datos basicos y una fecha de seguimiento."
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         <Field label="Nombre" htmlFor="p-name">
           <Input
             id="p-name"
             value={name}
-            onChange={(e) => setName(e.target.value)}
+            onChange={(event) => setName(event.target.value)}
             required
           />
         </Field>
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Teléfono" htmlFor="p-phone">
+          <Field label="Telefono / WhatsApp" htmlFor="p-phone">
             <Input
               id="p-phone"
               value={phone}
-              onChange={(e) => setPhone(e.target.value)}
+              onChange={(event) => setPhone(event.target.value)}
               inputMode="tel"
+              placeholder="+51 999 999 999"
             />
           </Field>
           <Field label="Correo" htmlFor="p-email">
@@ -108,7 +125,7 @@ export function ProspectForm({
               id="p-email"
               type="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(event) => setEmail(event.target.value)}
             />
           </Field>
         </div>
@@ -118,38 +135,42 @@ export function ProspectForm({
             <Select
               id="p-stage"
               value={stage}
-              onChange={(e) => setStage(e.target.value as ProspectStage)}
+              onChange={(event) => setStage(event.target.value as ProspectStage)}
             >
-              {PROSPECT_STAGE_ORDER.map((s) => (
-                <option key={s} value={s}>
-                  {PROSPECT_STAGE_LABELS[s]}
+              {PROSPECT_STAGE_ORDER.map((item) => (
+                <option key={item} value={item}>
+                  {PROSPECT_STAGE_LABELS[item]}
                 </option>
               ))}
             </Select>
           </Field>
-          <Field label="Interés" htmlFor="p-interest">
+          <Field label="Interes" htmlFor="p-interest">
             <Select
               id="p-interest"
               value={interest}
-              onChange={(e) =>
-                setInterest(e.target.value as ProspectInterest)
+              onChange={(event) =>
+                setInterest(event.target.value as ProspectInterest)
               }
             >
-              {Object.values(PROSPECT_INTERESTS).map((i) => (
-                <option key={i} value={i}>
-                  {PROSPECT_INTEREST_LABELS[i]}
+              {Object.values(PROSPECT_INTERESTS).map((item) => (
+                <option key={item} value={item}>
+                  {PROSPECT_INTEREST_LABELS[item]}
                 </option>
               ))}
             </Select>
           </Field>
         </div>
 
-        <Field label="Próxima acción" htmlFor="p-next" hint="Recordatorio de seguimiento (opcional).">
+        <Field
+          label="Proxima accion"
+          htmlFor="p-next"
+          hint="La app lo usara para recordarte."
+        >
           <Input
             id="p-next"
             type="datetime-local"
             value={nextAction}
-            onChange={(e) => setNextAction(e.target.value)}
+            onChange={(event) => setNextAction(event.target.value)}
           />
         </Field>
 
@@ -157,7 +178,7 @@ export function ProspectForm({
           <Textarea
             id="p-notes"
             value={notes}
-            onChange={(e) => setNotes(e.target.value)}
+            onChange={(event) => setNotes(event.target.value)}
             rows={3}
           />
         </Field>
@@ -168,19 +189,22 @@ export function ProspectForm({
               type="button"
               variant="ghost"
               onClick={handleDelete}
+              disabled={pending}
               className="text-destructive"
             >
-              <Trash2 className="size-4" />
+              <Trash2 className="size-5" />
               Eliminar
             </Button>
           ) : (
             <span />
           )}
           <div className="flex gap-2">
-            <Button type="button" variant="ghost" onClick={onClose}>
+            <Button type="button" variant="ghost" onClick={onClose} disabled={pending}>
               Cancelar
             </Button>
-            <Button type="submit">{isEdit ? "Guardar" : "Agregar"}</Button>
+            <Button type="submit" loading={pending}>
+              {isEdit ? "Guardar" : "Agregar"}
+            </Button>
           </div>
         </div>
       </form>

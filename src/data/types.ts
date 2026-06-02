@@ -1,25 +1,64 @@
-/**
- * Dominio de HGW — tipos de entidades y enumeraciones.
- * Fuente de verdad de tipos para toda la app. Alineado con el esquema Supabase (fase 2).
- */
 import type { Role } from "@/lib/constants";
+
+/* ============================ Multiempresa ============================ */
+
+export type BusinessStatus = "draft" | "active" | "suspended";
+
+export interface Business {
+  id: string;
+  slug: string;
+  name: string;
+  legalName: string | null;
+  logoUrl: string | null;
+  primaryColor: string;
+  accentColor: string;
+  customDomain: string | null;
+  registrationPath: string;
+  subscriptionPricePen: number;
+  status: BusinessStatus;
+  adminEmail: string;
+  memberCount: number;
+  contentCount: number;
+  createdAt: string;
+}
+
+export type BusinessContentType = "course" | "video" | "pdf" | "image" | "link";
+
+export const BUSINESS_CONTENT_TYPE_LABELS: Record<BusinessContentType, string> = {
+  course: "Curso",
+  video: "Video",
+  pdf: "PDF",
+  image: "Imagen",
+  link: "Enlace",
+};
+
+export interface BusinessContent {
+  id: string;
+  businessId: string;
+  title: string;
+  description: string;
+  type: BusinessContentType;
+  url: string;
+  category: string;
+  isPublished: boolean;
+  createdAt: string;
+}
 
 /* ============================ Usuarios ============================ */
 
 export interface Profile {
   id: string;
+  businessId: string | null;
   fullName: string;
   email: string;
   avatarUrl: string | null;
   phone: string | null;
   country: string | null;
   role: Role;
-  /** Patrocinador (estructura MLN, self-ref). Null para la raíz. */
   sponsorId: string | null;
-  /** Rango/insignia (placeholder para gamificación v2). */
   rank: string | null;
   isActive: boolean;
-  joinedAt: string; // ISO
+  joinedAt: string;
 }
 
 /* ============================ Feed ============================ */
@@ -34,27 +73,25 @@ export const POST_TYPES = {
 export type PostType = (typeof POST_TYPES)[keyof typeof POST_TYPES];
 
 export const POST_TYPE_LABELS: Record<PostType, string> = {
-  announcement: "Anuncio oficial",
-  motivation: "Motivación",
+  announcement: "Anuncio",
+  motivation: "Constancia",
   event: "Evento",
   recognition: "Reconocimiento",
 };
 
 export interface Post {
   id: string;
+  businessId: string | null;
   type: PostType;
   title: string;
   body: string;
   authorId: string;
   coverUrl: string | null;
-  /** Fijado en la parte superior del feed. */
   pinned: boolean;
-  /** Fecha/hora del evento (solo type === "event"). ISO. */
   eventDate: string | null;
-  /** Ubicación o enlace del evento. */
   eventLocation: string | null;
   reactions: number;
-  createdAt: string; // ISO
+  createdAt: string;
 }
 
 /* ============================ Academia ============================ */
@@ -68,8 +105,8 @@ export const COURSE_LEVELS = {
 export type CourseLevel = (typeof COURSE_LEVELS)[keyof typeof COURSE_LEVELS];
 
 export const COURSE_LEVEL_LABELS: Record<CourseLevel, string> = {
-  beginner: "Principiante",
-  intermediate: "Intermedio",
+  beginner: "Inicio",
+  intermediate: "Práctica",
   advanced: "Avanzado",
 };
 
@@ -84,13 +121,14 @@ export type LessonType = (typeof LESSON_TYPES)[keyof typeof LESSON_TYPES];
 
 export const LESSON_TYPE_LABELS: Record<LessonType, string> = {
   video: "Video",
-  article: "Artículo",
+  article: "Texto",
   pdf: "PDF",
   quiz: "Evaluación",
 };
 
 export interface Course {
   id: string;
+  businessId: string | null;
   slug: string;
   title: string;
   description: string;
@@ -116,17 +154,13 @@ export interface Lesson {
   slug: string;
   title: string;
   contentType: LessonType;
-  /** URL de video (embed) cuando contentType === "video". */
   videoUrl: string | null;
-  /** Contenido en markdown para artículos. */
   content: string | null;
-  /** URL del recurso PDF. */
   resourceUrl: string | null;
   durationMinutes: number;
   sortOrder: number;
 }
 
-/** Curso enriquecido con sus módulos y lecciones (para vistas de detalle). */
 export interface CourseWithContent extends Course {
   modules: (CourseModule & { lessons: Lesson[] })[];
   lessonCount: number;
@@ -138,7 +172,7 @@ export interface LessonProgress {
   completedAt: string | null;
 }
 
-/* ============================ Duplicación ============================ */
+/* ============================ Sistema comercial ============================ */
 
 export const PLAYBOOK_TYPES = {
   BUSINESS: "business",
@@ -148,8 +182,8 @@ export const PLAYBOOK_TYPES = {
 export type PlaybookType = (typeof PLAYBOOK_TYPES)[keyof typeof PLAYBOOK_TYPES];
 
 export const PLAYBOOK_TYPE_LABELS: Record<PlaybookType, string> = {
-  business: "Presentación de negocio",
-  product: "Presentación de producto",
+  business: "Presentación del servicio",
+  product: "Presentación del producto",
 };
 
 export interface PlaybookStep {
@@ -163,11 +197,11 @@ export interface PlaybookStep {
 
 export interface Playbook {
   id: string;
+  businessId: string | null;
   slug: string;
   title: string;
   type: PlaybookType;
   description: string;
-  /** Nombre de ícono lucide-react. */
   icon: string;
   steps: PlaybookStep[];
 }
@@ -179,27 +213,28 @@ export const SCRIPT_CATEGORIES = {
   CLOSING: "closing",
   OBJECTION: "objection",
   FOLLOWUP: "followup",
+  REACTIVATION: "reactivation",
 } as const;
 
 export type ScriptCategory =
   (typeof SCRIPT_CATEGORIES)[keyof typeof SCRIPT_CATEGORIES];
 
 export const SCRIPT_CATEGORY_LABELS: Record<ScriptCategory, string> = {
-  prospecting: "Prospección",
+  prospecting: "Primer contacto",
   invitation: "Invitación",
   presentation: "Presentación",
   closing: "Cierre",
-  objection: "Manejo de objeciones",
+  objection: "Objeción",
   followup: "Seguimiento",
+  reactivation: "Reactivación",
 };
 
 export interface Script {
   id: string;
+  businessId: string | null;
   title: string;
   category: ScriptCategory;
-  /** Situación de uso. */
   scenario: string;
-  /** Cuerpo del guion (markdown, con marcadores tipo [nombre]). */
   content: string;
   tags: string[];
 }
@@ -224,6 +259,7 @@ export const RESOURCE_TYPE_LABELS: Record<ResourceType, string> = {
 
 export interface Resource {
   id: string;
+  businessId: string | null;
   title: string;
   type: ResourceType;
   description: string;
@@ -232,14 +268,14 @@ export interface Resource {
   sizeLabel: string | null;
 }
 
-/* ============================ Prospectos (CRM) ============================ */
+/* ============================ Prospectos (CRM simple) ============================ */
 
 export const PROSPECT_STAGES = {
   NEW: "new",
   CONTACTED: "contacted",
   PRESENTED: "presented",
   FOLLOWUP: "followup",
-  CLOSED: "closed",
+  CUSTOMER: "customer",
   LOST: "lost",
 } as const;
 
@@ -247,27 +283,26 @@ export type ProspectStage =
   (typeof PROSPECT_STAGES)[keyof typeof PROSPECT_STAGES];
 
 export const PROSPECT_STAGE_LABELS: Record<ProspectStage, string> = {
-  new: "Nuevo",
+  new: "Prospecto",
   contacted: "Contactado",
-  presented: "Presentado",
+  presented: "Vio información",
   followup: "Seguimiento",
-  closed: "Cerrado",
-  lost: "Perdido",
+  customer: "Cliente",
+  lost: "No por ahora",
 };
 
-/** Orden de las columnas del kanban. */
 export const PROSPECT_STAGE_ORDER: ProspectStage[] = [
   "new",
   "contacted",
   "presented",
   "followup",
-  "closed",
+  "customer",
   "lost",
 ];
 
 export const PROSPECT_INTERESTS = {
-  BUSINESS: "business",
   PRODUCT: "product",
+  BUSINESS: "business",
   BOTH: "both",
 } as const;
 
@@ -275,21 +310,139 @@ export type ProspectInterest =
   (typeof PROSPECT_INTERESTS)[keyof typeof PROSPECT_INTERESTS];
 
 export const PROSPECT_INTEREST_LABELS: Record<ProspectInterest, string> = {
-  business: "Negocio",
   product: "Producto",
+  business: "Negocio",
   both: "Ambos",
 };
 
 export interface Prospect {
   id: string;
   ownerId: string;
+  businessId: string | null;
   name: string;
   phone: string | null;
   email: string | null;
   stage: ProspectStage;
   interest: ProspectInterest;
   notes: string;
-  /** Próxima acción de seguimiento (ISO) o null. */
   nextActionAt: string | null;
-  createdAt: string; // ISO
+  createdAt: string;
+  /** Ficha sintetizada que la IA mantiene sobre el cliente (memoria). */
+  aiProfile?: string | null;
+}
+
+/* ============================ Memoria de conversación ============================ */
+
+/**
+ * Quién originó la entrada del timeline:
+ * - prospect: lo que dijo el cliente (texto o lectura de una captura).
+ * - seller: lo que envió el vendedor.
+ * - ai: una nota generada por IA.
+ * - note: una nota manual del vendedor.
+ */
+export type InteractionRole = "prospect" | "seller" | "ai" | "note";
+
+export const INTERACTION_ROLE_LABELS: Record<InteractionRole, string> = {
+  prospect: "Cliente",
+  seller: "Tú",
+  ai: "IA",
+  note: "Nota",
+};
+
+export interface ProspectInteraction {
+  id: string;
+  prospectId: string;
+  ownerId: string;
+  businessId: string | null;
+  role: InteractionRole;
+  content: string;
+  source: string; // manual | screenshot | ai
+  complianceStatus: string | null;
+  createdAt: string;
+}
+
+/* ============================ Constancia y gamificación ============================ */
+
+export interface Learning {
+  id: string;
+  userId: string;
+  businessId: string | null;
+  situation: string;
+  reframe: string | null;
+  createdAt: string;
+}
+
+/** Acciones que se premian. Se premia ACTIVIDAD, nunca resultados económicos. */
+export type ActivityKind =
+  | "lesson_completed"
+  | "prospect_added"
+  | "conversation_used"
+  | "message_generated"
+  | "learning_logged"
+  | "post_created";
+
+export const ACTIVITY_KIND_LABELS: Record<ActivityKind, string> = {
+  lesson_completed: "Lección completada",
+  prospect_added: "Prospecto agregado",
+  conversation_used: "Conversación atendida",
+  message_generated: "Mensaje preparado",
+  learning_logged: "Aprendizaje registrado",
+  post_created: "Publicación creada",
+};
+
+/** Puntos por actividad (solo esfuerzo/constancia, no dinero). */
+export const ACTIVITY_POINTS: Record<ActivityKind, number> = {
+  lesson_completed: 10,
+  prospect_added: 5,
+  conversation_used: 5,
+  message_generated: 3,
+  learning_logged: 8,
+  post_created: 5,
+};
+
+export interface ActivityEvent {
+  id: string;
+  userId: string;
+  businessId: string | null;
+  kind: ActivityKind;
+  points: number;
+  createdAt: string;
+}
+
+export interface ActivityStats {
+  totalPoints: number;
+  totalEvents: number;
+  weekCount: number;
+  streakDays: number;
+  byKind: Record<ActivityKind, number>;
+}
+
+/* ============================ IA y cumplimiento ============================ */
+
+export type MessageTone = "calm" | "warm" | "direct" | "reactivation";
+
+export interface MessageTemplate {
+  id: string;
+  title: string;
+  category: ScriptCategory;
+  situation: string;
+  baseText: string;
+  defaultTone: MessageTone;
+  complianceHint: string;
+}
+
+export interface ComplianceIssue {
+  code:
+    | "income_promise"
+    | "recruiting_commission"
+    | "health_claim"
+    | "pressure";
+  label: string;
+  severity: "review" | "block";
+}
+
+export interface ComplianceResult {
+  status: "safe" | "needs_review" | "blocked";
+  issues: ComplianceIssue[];
+  suggestedText: string | null;
 }

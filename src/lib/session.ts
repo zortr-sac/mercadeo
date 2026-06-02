@@ -2,15 +2,26 @@ import "server-only";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getRepositories } from "@/data";
+import { createClient } from "@/lib/supabase/server";
 import type { Profile } from "@/data/types";
-import { ROUTES, SESSION_COOKIE, type Role } from "./constants";
+import { DATA_SOURCE, ROUTES, SESSION_COOKIE, type Role } from "./constants";
 import { hasAtLeast } from "./rbac";
 
 /**
- * Sesión del lado servidor (mock). Lee la cookie de sesión y resuelve el perfil.
- * En fase 2, esto se reemplaza por `supabase.auth.getUser()` con el mismo contrato.
+ * Sesión del lado servidor. En modo Supabase resuelve el usuario vía
+ * `supabase.auth.getUser()` y carga su perfil; en modo mock lee la cookie demo.
  */
 export async function getSession(): Promise<Profile | null> {
+  if (DATA_SOURCE === "supabase") {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return null;
+    const profile = await getRepositories().users.getById(user.id);
+    return profile && profile.isActive ? profile : null;
+  }
+
   const store = await cookies();
   const userId = store.get(SESSION_COOKIE)?.value;
   if (!userId) return null;

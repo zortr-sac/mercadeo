@@ -1,23 +1,45 @@
 import { z } from "zod";
 
-/**
- * Validación de variables de entorno con Zod.
- * Las variables NEXT_PUBLIC_* son seguras para el cliente.
- * SUPABASE_SERVICE_ROLE_KEY y VAPID_PRIVATE_KEY NUNCA deben exponerse al cliente.
- */
 const clientSchema = z.object({
   NEXT_PUBLIC_DATA_SOURCE: z.enum(["mock", "supabase"]).default("mock"),
-  NEXT_PUBLIC_APP_NAME: z.string().default("HGW"),
+  NEXT_PUBLIC_APP_NAME: z.string().default("Nexo Mentor"),
   NEXT_PUBLIC_APP_URL: z.string().url().default("http://localhost:3000"),
   NEXT_PUBLIC_SUPABASE_URL: z.string().url().optional().or(z.literal("")),
+  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: z.string().optional().or(z.literal("")),
   NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().optional().or(z.literal("")),
+  NEXT_PUBLIC_VAPID_PUBLIC_KEY: z.string().optional().or(z.literal("")),
 });
 
-/** Acceso tipado a env del cliente. Falla rápido si hay configuración inválida. */
+const serverSchema = clientSchema.extend({
+  SUPABASE_SERVICE_ROLE_KEY: z.string().optional().or(z.literal("")),
+  VAPID_PRIVATE_KEY: z.string().optional().or(z.literal("")),
+  OPENAI_API_KEY: z.string().optional().or(z.literal("")),
+  GEMINI_API_KEY: z.string().optional().or(z.literal("")),
+  GEMINI_MODEL: z.string().default("gemini-2.5-flash"),
+  VAPID_SUBJECT: z.string().default("mailto:soporte@nexomentor.app"),
+});
+
 export const env = clientSchema.parse({
   NEXT_PUBLIC_DATA_SOURCE: process.env.NEXT_PUBLIC_DATA_SOURCE,
   NEXT_PUBLIC_APP_NAME: process.env.NEXT_PUBLIC_APP_NAME,
   NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
   NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
+  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
   NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+  NEXT_PUBLIC_VAPID_PUBLIC_KEY: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
 });
+
+export const serverEnv = serverSchema.parse({
+  ...env,
+  SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
+  VAPID_PRIVATE_KEY: process.env.VAPID_PRIVATE_KEY,
+  OPENAI_API_KEY: process.env.OPENAI_API_KEY,
+  GEMINI_API_KEY: process.env.GEMINI_API_KEY,
+  GEMINI_MODEL: process.env.GEMINI_MODEL,
+  VAPID_SUBJECT: process.env.VAPID_SUBJECT,
+});
+
+export function getSupabasePublishableKey() {
+  return env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+}

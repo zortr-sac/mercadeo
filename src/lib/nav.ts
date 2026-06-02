@@ -1,8 +1,11 @@
 import {
+  Bell,
   GraduationCap,
   Home,
+  MessageCircle,
   Newspaper,
-  Rocket,
+  ShieldCheck,
+  Users,
   type LucideIcon,
 } from "lucide-react";
 import { ROUTES } from "./constants";
@@ -11,14 +14,24 @@ export interface NavItem {
   label: string;
   href: string;
   icon: LucideIcon;
-  /** Coincidencia por prefijo para resaltar la sección activa. */
   match: string;
 }
 
-/** Navegación principal (bottom nav móvil + sidebar desktop). */
+/** Navegacion principal para cliente y admin. */
 export const NAV_ITEMS: NavItem[] = [
   { label: "Inicio", href: ROUTES.home, icon: Home, match: "/" },
-  { label: "Feed", href: ROUTES.feed, icon: Newspaper, match: "/feed" },
+  {
+    label: "Mensajes",
+    href: ROUTES.mensajes,
+    icon: MessageCircle,
+    match: "/mensajes",
+  },
+  {
+    label: "Prospectos",
+    href: ROUTES.prospectos,
+    icon: Users,
+    match: "/duplicacion/prospectos",
+  },
   {
     label: "Academia",
     href: ROUTES.academia,
@@ -26,14 +39,23 @@ export const NAV_ITEMS: NavItem[] = [
     match: "/academia",
   },
   {
-    label: "Duplicación",
-    href: ROUTES.duplicacion,
-    icon: Rocket,
-    match: "/duplicacion",
+    label: "Admin",
+    href: ROUTES.admin,
+    icon: ShieldCheck,
+    match: "/admin",
   },
 ];
 
-/** Determina si una ruta está activa para un item de navegación. */
+export const SECONDARY_NAV_ITEMS: NavItem[] = [
+  { label: "Novedades", href: ROUTES.feed, icon: Newspaper, match: "/feed" },
+  {
+    label: "Recordatorios",
+    href: ROUTES.constancia,
+    icon: Bell,
+    match: "/constancia",
+  },
+];
+
 export function isActive(pathname: string, item: NavItem): boolean {
   if (item.match === "/") return pathname === "/";
   return pathname === item.match || pathname.startsWith(`${item.match}/`);

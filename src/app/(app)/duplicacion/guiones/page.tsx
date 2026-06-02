@@ -7,25 +7,27 @@ import { ROUTES } from "@/lib/constants";
 import { requireSession } from "@/lib/session";
 import { ScriptLibrary } from "@/features/duplication/script-library";
 
-export const metadata: Metadata = { title: "Guiones" };
+export const metadata: Metadata = { title: "Plantillas" };
 
 export default async function GuionesPage() {
-  await requireSession();
-  const scripts = await getRepositories().duplication.listScripts();
+  const user = await requireSession();
+  const scripts = await getRepositories().duplication.listScripts({
+    businessId: user.businessId,
+  });
 
   return (
     <Container>
       <Link
         href={ROUTES.duplicacion}
-        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
+        className="inline-flex items-center gap-2 text-muted-foreground transition-colors hover:text-foreground"
       >
-        <ArrowLeft className="size-4" />
-        Volver a Duplicación
+        <ArrowLeft className="size-5" />
+        Volver al sistema comercial
       </Link>
       <div className="mt-4">
         <PageHeader
-          title="Guiones"
-          subtitle="Qué decir en cada momento. Copia, personaliza y úsalo."
+          title="Plantillas"
+          subtitle="Textos base para copiar o llevar al generador de IA."
         />
       </div>
       <div className="mt-6">

@@ -2,12 +2,17 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useSession } from "@/components/session-provider";
+import { ROUTES } from "@/lib/constants";
 import { isActive, NAV_ITEMS } from "@/lib/nav";
 import { cn } from "@/lib/utils";
 
-/** Navegación inferior (solo móvil/tablet). */
 export function BottomNav() {
   const pathname = usePathname();
+  const user = useSession();
+  const items = NAV_ITEMS.filter((item) =>
+    item.href === ROUTES.admin ? user.role === "admin" : true,
+  ).slice(0, 4);
 
   return (
     <nav
@@ -15,7 +20,7 @@ export function BottomNav() {
       style={{ paddingBottom: "var(--safe-bottom)" }}
     >
       <div className="mx-auto flex max-w-lg items-stretch justify-around">
-        {NAV_ITEMS.map((item) => {
+        {items.map((item) => {
           const active = isActive(pathname, item);
           const Icon = item.icon;
           return (
@@ -23,12 +28,12 @@ export function BottomNav() {
               key={item.href}
               href={item.href}
               className={cn(
-                "flex flex-1 flex-col items-center gap-1 py-2.5 text-[0.7rem] font-medium transition-colors",
-                active ? "text-brand-600 dark:text-brand-400" : "text-muted-foreground",
+                "flex flex-1 flex-col items-center gap-1 py-2.5 font-medium transition-colors",
+                active ? "text-brand-700" : "text-muted-foreground",
               )}
             >
               <Icon className={cn("size-5", active && "scale-110")} />
-              {item.label}
+              <span className="text-base leading-none">{item.label}</span>
             </Link>
           );
         })}

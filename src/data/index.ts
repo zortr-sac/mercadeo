@@ -5,21 +5,13 @@
  */
 import { DATA_SOURCE } from "@/lib/constants";
 import { mockRepositories } from "./mock";
+import { supabaseRepositories } from "./supabase";
 import type { Repositories } from "./repositories";
 
 let cached: Repositories | null = null;
 
 export function getRepositories(): Repositories {
   if (cached) return cached;
-
-  if (DATA_SOURCE === "supabase") {
-    // Fase 2: implementación Supabase.
-    // Se implementará en ./supabase y se devolverá aquí.
-    // De momento, hacemos fallback a mock para no romper el desarrollo.
-    cached = mockRepositories;
-  } else {
-    cached = mockRepositories;
-  }
-
+  cached = DATA_SOURCE === "supabase" ? supabaseRepositories : mockRepositories;
   return cached;
 }

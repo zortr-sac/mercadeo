@@ -18,6 +18,7 @@ import {
 import { ROUTES } from "@/lib/constants";
 import { useProgressStore } from "@/store/progress-store";
 import { cn } from "@/lib/utils";
+import { logLessonCompletedAction } from "@/features/constancia/actions";
 
 /** Vista de una lección: contenido + marcar completada + navegación. */
 export function LessonView({
@@ -88,7 +89,11 @@ export function LessonView({
       )}
 
       <Button
-        onClick={() => toggle(lesson.id)}
+        onClick={() => {
+          const wasCompleted = isCompleted;
+          toggle(lesson.id);
+          if (!wasCompleted) void logLessonCompletedAction();
+        }}
         variant={isCompleted ? "secondary" : "default"}
         className="w-full"
       >

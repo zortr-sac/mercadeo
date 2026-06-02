@@ -1,11 +1,10 @@
-/** Layout del área pública (login). Centrado, mobile-first. */
 export default function AuthLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex min-h-dvh flex-col items-center justify-center gradient-brand px-4 py-10">
+    <div className="flex min-h-dvh flex-col items-center justify-center bg-[#0f2f2c] px-4 py-10">
       {children}
     </div>
   );

@@ -1,13 +1,16 @@
-import { Briefcase, Package, Rocket, type LucideIcon } from "lucide-react";
-
-/** Mapa de nombres de icono (desde datos) a componentes lucide. */
-const ICONS: Record<string, LucideIcon> = {
+import {
   Briefcase,
+  MessageCircle,
   Package,
-  Rocket,
+  Route,
+  type LucideIcon,
+} from "lucide-react";
+
+export const PLAYBOOK_ICONS: Record<string, LucideIcon> = {
+  Briefcase,
+  MessageCircle,
+  Package,
+  Route,
 };
 
-/** Resuelve un icono por nombre, con Rocket como fallback. */
-export function resolveIcon(name: string): LucideIcon {
-  return ICONS[name] ?? Rocket;
-}
+export const FALLBACK_PLAYBOOK_ICON = Route;

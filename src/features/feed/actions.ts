@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { getRepositories } from "@/data";
+import { logActivity } from "@/lib/activity";
 import { ROUTES } from "@/lib/constants";
 import { can } from "@/lib/rbac";
 import { requireSession } from "@/lib/session";
@@ -44,7 +45,9 @@ export async function createPostAction(
   await getRepositories().feed.create({
     ...parsed.data,
     authorId: user.id,
+    businessId: user.businessId,
   });
+  await logActivity(user.id, user.businessId, "post_created");
   revalidatePath(ROUTES.feed);
   return { ok: true };
 }
