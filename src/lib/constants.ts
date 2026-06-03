@@ -40,6 +40,7 @@ export const ROUTES = {
   login: "/login",
   feed: "/feed",
   academia: "/academia",
+  audiolibros: "/audiolibros",
   duplicacion: "/duplicacion",
   prospectos: "/duplicacion/prospectos",
   mensajes: "/mensajes",
@@ -49,6 +50,36 @@ export const ROUTES = {
   terminos: "/terminos",
   privacidad: "/privacidad",
 } as const;
+
+/** Pestañas del hub de administración por negocio. */
+export const ADMIN_TABS = [
+  "resumen",
+  "academia",
+  "audiolibros",
+  "novedades",
+  "mensajes",
+  "lideres",
+  "ajustes",
+] as const;
+
+export type AdminTab = (typeof ADMIN_TABS)[number];
+
+export const ADMIN_TAB_LABELS: Record<AdminTab, string> = {
+  resumen: "Resumen",
+  academia: "Academia",
+  audiolibros: "Audiolibros",
+  novedades: "Novedades",
+  mensajes: "Mensajes",
+  lideres: "Líderes",
+  ajustes: "Ajustes",
+};
+
+export function adminBusinessPath(
+  businessId: string,
+  tab: AdminTab = "resumen",
+): string {
+  return `/admin/${businessId}/${tab}`;
+}
 
 /** Nombre de la cookie de sesion (mock ahora; Supabase usa sus propias cookies en fase 2). */
 export const SESSION_COOKIE = "nexo_mentor_session";

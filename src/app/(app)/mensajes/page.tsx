@@ -15,9 +15,11 @@ export default async function MensajesPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  await requireSession();
+  const user = await requireSession();
   const params = await searchParams;
-  const templates = await getRepositories().duplication.listMessageTemplates();
+  const templates = await getRepositories().duplication.listMessageTemplates({
+    businessId: user.businessId,
+  });
 
   return (
     <Container className="max-w-5xl">

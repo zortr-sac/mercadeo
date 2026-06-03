@@ -3,18 +3,28 @@ import { createClient } from "@/lib/supabase/server";
 import type {
   AcademyRepository,
   ActivityRepository,
+  AudiobookPatch,
+  AudiobookRepository,
   BusinessRepository,
+  CoursePatch,
   DuplicationRepository,
   FeedRepository,
   InteractionRepository,
   LearningRepository,
+  LessonPatch,
+  MessageTemplatePatch,
   NewActivityInput,
+  NewAudiobookInput,
   NewBusinessContentInput,
   NewBusinessInput,
+  NewCourseInput,
   NewInteractionInput,
   NewLearningInput,
+  NewLessonInput,
+  NewMessageTemplateInput,
   NewPostInput,
   NewProspectInput,
+  PostPatch,
   ProspectPatch,
   ProspectRepository,
   Repositories,
@@ -24,9 +34,11 @@ import type {
   ActivityEvent,
   ActivityKind,
   ActivityStats,
+  Audiobook,
   Business,
   BusinessContent,
   Course,
+  CourseModule,
   CourseWithContent,
   Learning,
   Lesson,
@@ -186,12 +198,32 @@ function mapResource(row: any): Resource {
 function mapTemplate(row: any): MessageTemplate {
   return {
     id: row.id,
+    businessId: row.business_id ?? null,
     title: row.title,
     category: row.category,
     situation: row.situation,
     baseText: row.base_text,
     defaultTone: row.default_tone,
     complianceHint: row.compliance_hint,
+  };
+}
+
+function mapAudiobook(row: any): Audiobook {
+  return {
+    id: row.id,
+    businessId: row.business_id ?? null,
+    slug: row.slug,
+    title: row.title,
+    author: row.author ?? "",
+    description: row.description ?? "",
+    coverUrl: row.cover_url ?? null,
+    audioUrl: row.audio_url ?? null,
+    audioPath: row.audio_path ?? null,
+    category: row.category ?? "General",
+    durationSeconds: row.duration_seconds ?? 0,
+    isPublished: row.is_published ?? false,
+    sortOrder: row.sort_order ?? 0,
+    createdAt: row.created_at,
   };
 }
 
@@ -310,6 +342,26 @@ function hashString(value: string): number {
   return hash;
 }
 
+/** Slug único global en `table` (añade -2, -3… si colisiona). */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function uniqueSlug(supabase: any, table: string, base: string): Promise<string> {
+  const root = slugify(base);
+  let candidate = root;
+  let suffix = 2;
+  // Hasta ~50 intentos; suficiente en la práctica.
+  for (let i = 0; i < 50; i += 1) {
+    const { data } = await supabase
+      .from(table)
+      .select("id")
+      .eq("slug", candidate)
+      .maybeSingle();
+    if (!data) return candidate;
+    candidate = `${root}-${suffix}`;
+    suffix += 1;
+  }
+  return `${root}-${Math.abs(hashString(base + String(Date.now())))}`;
+}
+
 /** Applies "own business OR global (null)" scope; when businessId is null, only global rows. */
 function scopeBusiness<T extends { or: (f: string) => T; is: (c: string, v: null) => T }>(
   query: T,
@@ -337,6 +389,15 @@ const businesses: BusinessRepository = {
       .from("businesses_with_stats")
       .select("*")
       .eq("slug", slug)
+      .maybeSingle();
+    return data ? mapBusiness(data) : null;
+  },
+  async getById(id) {
+    const supabase = await db();
+    const { data } = await supabase
+      .from("businesses_with_stats")
+      .select("*")
+      .eq("id", id)
       .maybeSingle();
     return data ? mapBusiness(data) : null;
   },
@@ -456,6 +517,26 @@ const users: UserRepository = {
     if (error) throw error;
     return (data ?? []).map(mapProfile);
   },
+  async findByEmail(email) {
+    const supabase = await db();
+    const { data } = await supabase
+      .from("profiles")
+      .select("*")
+      .ilike("email", email.trim())
+      .maybeSingle();
+    return data ? mapProfile(data) : null;
+  },
+  async assign(userId, businessId, role) {
+    const supabase = await db();
+    const { data, error } = await supabase
+      .from("profiles")
+      .update({ business_id: businessId, role })
+      .eq("id", userId)
+      .select("*")
+      .single();
+    if (error) throw error;
+    return mapProfile(data);
+  },
 };
 
 const feed: FeedRepository = {
@@ -493,6 +574,29 @@ const feed: FeedRepository = {
       .single();
     if (error) throw error;
     return mapPost(data);
+  },
+  async update(id, patch: PostPatch) {
+    const supabase = await db();
+    const row: Record<string, unknown> = {};
+    if (patch.type !== undefined) row.type = patch.type;
+    if (patch.title !== undefined) row.title = patch.title;
+    if (patch.body !== undefined) row.body = patch.body;
+    if (patch.pinned !== undefined) row.pinned = patch.pinned;
+    if (patch.eventDate !== undefined) row.event_date = patch.eventDate;
+    if (patch.eventLocation !== undefined) row.event_location = patch.eventLocation;
+    const { data, error } = await supabase
+      .from("posts")
+      .update(row)
+      .eq("id", id)
+      .select("*")
+      .single();
+    if (error) throw error;
+    return mapPost(data);
+  },
+  async remove(id) {
+    const supabase = await db();
+    const { error } = await supabase.from("posts").delete().eq("id", id);
+    if (error) throw error;
   },
   async toggleReaction(id, delta) {
     const supabase = await db();
@@ -568,6 +672,162 @@ const academy: AcademyRepository = {
     }
     return null;
   },
+  // --- Admin ---
+  async listCoursesAdmin(businessId) {
+    const supabase = await db();
+    const { data, error } = await supabase
+      .from("courses")
+      .select("*")
+      .eq("business_id", businessId)
+      .order("sort_order", { ascending: true });
+    if (error) throw error;
+    return (data ?? []).map(mapCourse);
+  },
+  async getCourseById(id) {
+    const supabase = await db();
+    const { data: course } = await supabase
+      .from("courses")
+      .select("*")
+      .eq("id", id)
+      .maybeSingle();
+    if (!course) return null;
+    return buildCourseWithContent(supabase, course);
+  },
+  async createCourse(input: NewCourseInput) {
+    const supabase = await db();
+    const slug = await uniqueSlug(supabase, "courses", input.title);
+    const { data, error } = await supabase
+      .from("courses")
+      .insert({
+        business_id: input.businessId,
+        slug,
+        title: input.title.trim(),
+        description: input.description.trim(),
+        level: input.level,
+        category: input.category.trim(),
+        estimated_minutes: input.estimatedMinutes,
+        is_published: input.isPublished,
+        sort_order: input.sortOrder ?? 0,
+      })
+      .select("*")
+      .single();
+    if (error) throw error;
+    return mapCourse(data);
+  },
+  async updateCourse(id, patch: CoursePatch) {
+    const supabase = await db();
+    const row: Record<string, unknown> = {};
+    if (patch.title !== undefined) row.title = patch.title;
+    if (patch.description !== undefined) row.description = patch.description;
+    if (patch.level !== undefined) row.level = patch.level;
+    if (patch.category !== undefined) row.category = patch.category;
+    if (patch.estimatedMinutes !== undefined) row.estimated_minutes = patch.estimatedMinutes;
+    if (patch.isPublished !== undefined) row.is_published = patch.isPublished;
+    if (patch.sortOrder !== undefined) row.sort_order = patch.sortOrder;
+    const { data, error } = await supabase
+      .from("courses")
+      .update(row)
+      .eq("id", id)
+      .select("*")
+      .single();
+    if (error) throw error;
+    return mapCourse(data);
+  },
+  async removeCourse(id) {
+    const supabase = await db();
+    const { error } = await supabase.from("courses").delete().eq("id", id);
+    if (error) throw error;
+  },
+  async ensureModule(courseId, title) {
+    const supabase = await db();
+    const { data: existing } = await supabase
+      .from("course_modules")
+      .select("*")
+      .eq("course_id", courseId)
+      .order("sort_order")
+      .limit(1)
+      .maybeSingle();
+    if (existing) {
+      return {
+        id: existing.id,
+        courseId: existing.course_id,
+        title: existing.title,
+        sortOrder: existing.sort_order,
+      } satisfies CourseModule;
+    }
+    const { data, error } = await supabase
+      .from("course_modules")
+      .insert({ course_id: courseId, title: title.trim() || "Contenido", sort_order: 1 })
+      .select("*")
+      .single();
+    if (error) throw error;
+    return {
+      id: data.id,
+      courseId: data.course_id,
+      title: data.title,
+      sortOrder: data.sort_order,
+    } satisfies CourseModule;
+  },
+  async createLesson(input: NewLessonInput) {
+    const supabase = await db();
+    // slug único por curso
+    const root = slugify(input.title);
+    let slug = root;
+    let suffix = 2;
+    for (let i = 0; i < 50; i += 1) {
+      const { data: clash } = await supabase
+        .from("lessons")
+        .select("id")
+        .eq("course_id", input.courseId)
+        .eq("slug", slug)
+        .maybeSingle();
+      if (!clash) break;
+      slug = `${root}-${suffix}`;
+      suffix += 1;
+    }
+    const { data, error } = await supabase
+      .from("lessons")
+      .insert({
+        course_id: input.courseId,
+        module_id: input.moduleId,
+        slug,
+        title: input.title.trim(),
+        content_type: input.contentType,
+        video_url: input.videoUrl ?? null,
+        content: input.content ?? null,
+        resource_url: input.resourceUrl ?? null,
+        duration_minutes: input.durationMinutes ?? 0,
+        sort_order: input.sortOrder ?? 0,
+      })
+      .select("*")
+      .single();
+    if (error) throw error;
+    return mapLesson(data);
+  },
+  async updateLesson(id, patch: LessonPatch) {
+    const supabase = await db();
+    const row: Record<string, unknown> = {};
+    if (patch.title !== undefined) row.title = patch.title;
+    if (patch.contentType !== undefined) row.content_type = patch.contentType;
+    if (patch.videoUrl !== undefined) row.video_url = patch.videoUrl;
+    if (patch.content !== undefined) row.content = patch.content;
+    if (patch.resourceUrl !== undefined) row.resource_url = patch.resourceUrl;
+    if (patch.durationMinutes !== undefined) row.duration_minutes = patch.durationMinutes;
+    if (patch.sortOrder !== undefined) row.sort_order = patch.sortOrder;
+    const { data, error } = await supabase
+      .from("lessons")
+      .update(row)
+      .eq("id", id)
+      .select("*")
+      .single();
+    if (error) throw error;
+    return mapLesson(data);
+  },
+  async removeLesson(id) {
+    const supabase = await db();
+    const { error } = await supabase.from("lessons").delete().eq("id", id);
+    if (error) throw error;
+  },
 };
 
 const duplication: DuplicationRepository = {
@@ -598,9 +858,51 @@ const duplication: DuplicationRepository = {
     const supabase = await db();
     let query = supabase.from("message_templates").select("*");
     if (filter?.category) query = query.eq("category", filter.category);
+    if (filter && "businessId" in filter) query = scopeBusiness(query, filter.businessId);
     const { data, error } = await query.order("created_at", { ascending: true });
     if (error) throw error;
     return (data ?? []).map(mapTemplate);
+  },
+  async createMessageTemplate(input: NewMessageTemplateInput) {
+    const supabase = await db();
+    const { data, error } = await supabase
+      .from("message_templates")
+      .insert({
+        business_id: input.businessId,
+        title: input.title.trim(),
+        category: input.category,
+        situation: input.situation.trim(),
+        base_text: input.baseText.trim(),
+        default_tone: input.defaultTone,
+        compliance_hint: input.complianceHint.trim(),
+      })
+      .select("*")
+      .single();
+    if (error) throw error;
+    return mapTemplate(data);
+  },
+  async updateMessageTemplate(id, patch: MessageTemplatePatch) {
+    const supabase = await db();
+    const row: Record<string, unknown> = {};
+    if (patch.title !== undefined) row.title = patch.title;
+    if (patch.category !== undefined) row.category = patch.category;
+    if (patch.situation !== undefined) row.situation = patch.situation;
+    if (patch.baseText !== undefined) row.base_text = patch.baseText;
+    if (patch.defaultTone !== undefined) row.default_tone = patch.defaultTone;
+    if (patch.complianceHint !== undefined) row.compliance_hint = patch.complianceHint;
+    const { data, error } = await supabase
+      .from("message_templates")
+      .update(row)
+      .eq("id", id)
+      .select("*")
+      .single();
+    if (error) throw error;
+    return mapTemplate(data);
+  },
+  async removeMessageTemplate(id) {
+    const supabase = await db();
+    const { error } = await supabase.from("message_templates").delete().eq("id", id);
+    if (error) throw error;
   },
   async listResources(filter) {
     const supabase = await db();
@@ -803,12 +1105,98 @@ const activity: ActivityRepository = {
   },
 };
 
+const audiobooks: AudiobookRepository = {
+  async list(filter) {
+    const supabase = await db();
+    let query = supabase.from("audiobooks").select("*").eq("is_published", true);
+    if (filter && "businessId" in filter) query = scopeBusiness(query, filter.businessId);
+    const { data, error } = await query.order("sort_order", { ascending: true });
+    if (error) throw error;
+    return (data ?? []).map(mapAudiobook);
+  },
+  async listAdmin(businessId) {
+    const supabase = await db();
+    const { data, error } = await supabase
+      .from("audiobooks")
+      .select("*")
+      .eq("business_id", businessId)
+      .order("sort_order", { ascending: true });
+    if (error) throw error;
+    return (data ?? []).map(mapAudiobook);
+  },
+  async getBySlug(slug) {
+    const supabase = await db();
+    const { data } = await supabase
+      .from("audiobooks")
+      .select("*")
+      .eq("slug", slug)
+      .maybeSingle();
+    return data ? mapAudiobook(data) : null;
+  },
+  async create(input: NewAudiobookInput) {
+    const supabase = await db();
+    const slug = await uniqueSlug(supabase, "audiobooks", input.title);
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    const { data, error } = await supabase
+      .from("audiobooks")
+      .insert({
+        business_id: input.businessId,
+        slug,
+        title: input.title.trim(),
+        author: input.author.trim(),
+        description: input.description.trim(),
+        category: input.category.trim() || "General",
+        cover_url: input.coverUrl ?? null,
+        audio_url: input.audioUrl ?? null,
+        audio_path: input.audioPath ?? null,
+        duration_seconds: input.durationSeconds ?? 0,
+        is_published: input.isPublished ?? false,
+        sort_order: input.sortOrder ?? 0,
+        created_by: user?.id ?? null,
+      })
+      .select("*")
+      .single();
+    if (error) throw error;
+    return mapAudiobook(data);
+  },
+  async update(id, patch: AudiobookPatch) {
+    const supabase = await db();
+    const row: Record<string, unknown> = { updated_at: new Date().toISOString() };
+    if (patch.title !== undefined) row.title = patch.title;
+    if (patch.author !== undefined) row.author = patch.author;
+    if (patch.description !== undefined) row.description = patch.description;
+    if (patch.category !== undefined) row.category = patch.category;
+    if (patch.coverUrl !== undefined) row.cover_url = patch.coverUrl;
+    if (patch.audioUrl !== undefined) row.audio_url = patch.audioUrl;
+    if (patch.audioPath !== undefined) row.audio_path = patch.audioPath;
+    if (patch.durationSeconds !== undefined) row.duration_seconds = patch.durationSeconds;
+    if (patch.isPublished !== undefined) row.is_published = patch.isPublished;
+    if (patch.sortOrder !== undefined) row.sort_order = patch.sortOrder;
+    const { data, error } = await supabase
+      .from("audiobooks")
+      .update(row)
+      .eq("id", id)
+      .select("*")
+      .single();
+    if (error) throw error;
+    return mapAudiobook(data);
+  },
+  async remove(id) {
+    const supabase = await db();
+    const { error } = await supabase.from("audiobooks").delete().eq("id", id);
+    if (error) throw error;
+  },
+};
+
 export const supabaseRepositories: Repositories = {
   businesses,
   users,
   feed,
   academy,
   duplication,
+  audiobooks,
   prospects,
   interactions,
   learnings,

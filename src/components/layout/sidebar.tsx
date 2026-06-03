@@ -13,7 +13,7 @@ export function Sidebar() {
   const pathname = usePathname();
   const user = useSession();
   const mainItems = NAV_ITEMS.filter((item) =>
-    item.href === ROUTES.admin ? user.role === "admin" : true,
+    item.href === ROUTES.admin ? user.role !== "member" : true,
   );
 
   return (

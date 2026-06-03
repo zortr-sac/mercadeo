@@ -42,3 +42,14 @@ export async function requireRole(min: Role): Promise<Profile> {
   if (!hasAtLeast(user.role, min)) redirect(ROUTES.home);
   return user;
 }
+
+/**
+ * Exige ser administrador de ESE negocio: admin de plataforma (todos) o
+ * líder cuyo `businessId` coincide. Si no cumple, redirige al inicio.
+ */
+export async function requireBusinessAdmin(businessId: string): Promise<Profile> {
+  const user = await requireSession();
+  if (user.role === "admin") return user;
+  if (user.role === "leader" && user.businessId === businessId) return user;
+  redirect(ROUTES.home);
+}

@@ -1,19 +1,29 @@
-import { DEFAULT_SUBSCRIPTION_PRICE_PEN } from "@/lib/constants";
+import { DEFAULT_SUBSCRIPTION_PRICE_PEN, type Role } from "@/lib/constants";
 import type {
   AcademyRepository,
   ActivityRepository,
+  AudiobookPatch,
+  AudiobookRepository,
   BusinessRepository,
+  CoursePatch,
   DuplicationRepository,
   FeedRepository,
   InteractionRepository,
   LearningRepository,
+  LessonPatch,
+  MessageTemplatePatch,
   NewActivityInput,
+  NewAudiobookInput,
   NewBusinessContentInput,
   NewBusinessInput,
+  NewCourseInput,
   NewInteractionInput,
   NewLearningInput,
+  NewLessonInput,
+  NewMessageTemplateInput,
   NewPostInput,
   NewProspectInput,
+  PostPatch,
   ProspectPatch,
   ProspectRepository,
   Repositories,
@@ -22,9 +32,15 @@ import type {
 import type {
   ActivityEvent,
   ActivityKind,
+  Audiobook,
   Business,
   BusinessContent,
+  Course,
+  CourseModule,
+  CourseWithContent,
   Learning,
+  Lesson,
+  MessageTemplate,
   Post,
   Prospect,
   ProspectInteraction,
@@ -50,10 +66,29 @@ const posts: Post[] = [...SEED_POSTS];
 const businessesData: Business[] = [...SEED_BUSINESSES];
 const businessContentData: BusinessContent[] = [...SEED_BUSINESS_CONTENT];
 
+function mockSlug(value: string, taken: (s: string) => boolean): string {
+  const base =
+    value
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[̀-ͯ]/g, "")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)/g, "")
+      .slice(0, 48) || "item";
+  let slug = base;
+  let suffix = 2;
+  while (taken(slug)) {
+    slug = `${base}-${suffix}`;
+    suffix += 1;
+  }
+  return slug;
+}
+
 const businesses: BusinessRepository = {
   list: () => tick([...businessesData]),
   getBySlug: (slug) =>
     tick(businessesData.find((business) => business.slug === slug) ?? null),
+  getById: (id) => tick(businessesData.find((business) => business.id === id) ?? null),
   listContent: (businessId) =>
     tick(businessContentData.filter((item) => item.businessId === businessId)),
   create: (input: NewBusinessInput) => {
@@ -127,6 +162,19 @@ const users: UserRepository = {
     ),
   getTeam: (leaderId) =>
     tick(SEED_USERS.filter((user) => user.sponsorId === leaderId)),
+  findByEmail: (email) =>
+    tick(
+      SEED_USERS.find(
+        (user) => user.email.toLowerCase() === email.trim().toLowerCase(),
+      ) ?? null,
+    ),
+  assign: (userId, businessId, role: Role) => {
+    const user = SEED_USERS.find((item) => item.id === userId);
+    if (!user) throw new Error("Usuario no encontrado");
+    user.businessId = businessId;
+    user.role = role;
+    return tick(user);
+  },
 };
 
 const feed: FeedRepository = {
@@ -165,6 +213,17 @@ const feed: FeedRepository = {
     posts.unshift(post);
     return tick(post);
   },
+  update: (id, patch: PostPatch) => {
+    const post = posts.find((item) => item.id === id);
+    if (!post) throw new Error("Post no encontrado");
+    Object.assign(post, patch);
+    return tick(post);
+  },
+  remove: (id) => {
+    const index = posts.findIndex((item) => item.id === id);
+    if (index >= 0) posts.splice(index, 1);
+    return tick(undefined);
+  },
   toggleReaction: (id, delta) => {
     const post = posts.find((item) => item.id === id);
     if (!post) return tick(0);
@@ -173,36 +232,45 @@ const feed: FeedRepository = {
   },
 };
 
+type MockCourse = CourseWithContent;
+const coursesData: MockCourse[] = SEED_COURSES.map((course) => ({
+  ...course,
+  lessonCount: course.modules.reduce((sum, m) => sum + m.lessons.length, 0),
+}));
+
+function toCourse(course: MockCourse): Course {
+  return {
+    id: course.id,
+    businessId: course.businessId,
+    slug: course.slug,
+    title: course.title,
+    description: course.description,
+    coverUrl: course.coverUrl,
+    level: course.level,
+    category: course.category,
+    estimatedMinutes: course.estimatedMinutes,
+    isPublished: course.isPublished,
+    sortOrder: course.sortOrder,
+  };
+}
+
 const academy: AcademyRepository = {
   listCourses: (filter) => {
-    const items = SEED_COURSES.filter((course) => course.isPublished)
+    const items = coursesData
+      .filter((course) => course.isPublished)
       .filter((course) => (filter?.level ? course.level === filter.level : true))
       .filter((course) =>
         filter && "businessId" in filter
           ? course.businessId === filter.businessId || course.businessId === null
           : true,
-      );
-    items.sort((a, b) => a.sortOrder - b.sortOrder);
-    return tick(
-      items.map((course) => ({
-        id: course.id,
-        businessId: course.businessId,
-        slug: course.slug,
-        title: course.title,
-        description: course.description,
-        coverUrl: course.coverUrl,
-        level: course.level,
-        category: course.category,
-        estimatedMinutes: course.estimatedMinutes,
-        isPublished: course.isPublished,
-        sortOrder: course.sortOrder,
-      })),
-    );
+      )
+      .sort((a, b) => a.sortOrder - b.sortOrder);
+    return tick(items.map(toCourse));
   },
   getCourseBySlug: (slug) =>
-    tick(SEED_COURSES.find((course) => course.slug === slug) ?? null),
+    tick(coursesData.find((course) => course.slug === slug) ?? null),
   getLesson: (courseSlug, lessonSlug) => {
-    const course = SEED_COURSES.find((item) => item.slug === courseSlug);
+    const course = coursesData.find((item) => item.slug === courseSlug);
     if (!course) return tick(null);
     for (const courseModule of course.modules) {
       const lesson = courseModule.lessons.find((item) => item.slug === lessonSlug);
@@ -210,7 +278,115 @@ const academy: AcademyRepository = {
     }
     return tick(null);
   },
+  listCoursesAdmin: (businessId) =>
+    tick(
+      coursesData
+        .filter((course) => course.businessId === businessId)
+        .sort((a, b) => a.sortOrder - b.sortOrder)
+        .map(toCourse),
+    ),
+  getCourseById: (id) => tick(coursesData.find((course) => course.id === id) ?? null),
+  createCourse: (input: NewCourseInput) => {
+    const now = new Date().toISOString();
+    const course: MockCourse = {
+      id: `c-${coursesData.length + 1}-${now}`,
+      businessId: input.businessId,
+      slug: mockSlug(input.title, (s) => coursesData.some((c) => c.slug === s)),
+      title: input.title.trim(),
+      description: input.description.trim(),
+      coverUrl: null,
+      level: input.level,
+      category: input.category.trim(),
+      estimatedMinutes: input.estimatedMinutes,
+      isPublished: input.isPublished,
+      sortOrder: input.sortOrder ?? 0,
+      modules: [],
+      lessonCount: 0,
+    };
+    coursesData.unshift(course);
+    return tick(toCourse(course));
+  },
+  updateCourse: (id, patch: CoursePatch) => {
+    const course = coursesData.find((item) => item.id === id);
+    if (!course) throw new Error("Curso no encontrado");
+    Object.assign(course, patch);
+    return tick(toCourse(course));
+  },
+  removeCourse: (id) => {
+    const index = coursesData.findIndex((item) => item.id === id);
+    if (index >= 0) coursesData.splice(index, 1);
+    return tick(undefined);
+  },
+  ensureModule: (courseId, title) => {
+    const course = coursesData.find((item) => item.id === courseId);
+    if (!course) throw new Error("Curso no encontrado");
+    if (course.modules[0]) {
+      const m = course.modules[0];
+      return tick({ id: m.id, courseId, title: m.title, sortOrder: m.sortOrder });
+    }
+    const mod: CourseModule & { lessons: Lesson[] } = {
+      id: `m-${courseId}-1`,
+      courseId,
+      title: title.trim() || "Contenido",
+      sortOrder: 1,
+      lessons: [],
+    };
+    course.modules.push(mod);
+    return tick({ id: mod.id, courseId, title: mod.title, sortOrder: mod.sortOrder });
+  },
+  createLesson: (input: NewLessonInput) => {
+    const course = coursesData.find((item) => item.id === input.courseId);
+    if (!course) throw new Error("Curso no encontrado");
+    const mod =
+      course.modules.find((m) => m.id === input.moduleId) ?? course.modules[0];
+    if (!mod) throw new Error("Módulo no encontrado");
+    const lesson: Lesson = {
+      id: `l-${input.courseId}-${Date.now()}`,
+      moduleId: mod.id,
+      courseId: input.courseId,
+      slug: mockSlug(input.title, (s) =>
+        course.modules.some((m) => m.lessons.some((l) => l.slug === s)),
+      ),
+      title: input.title.trim(),
+      contentType: input.contentType,
+      videoUrl: input.videoUrl ?? null,
+      content: input.content ?? null,
+      resourceUrl: input.resourceUrl ?? null,
+      durationMinutes: input.durationMinutes ?? 0,
+      sortOrder: input.sortOrder ?? 0,
+    };
+    mod.lessons.push(lesson);
+    course.lessonCount += 1;
+    return tick(lesson);
+  },
+  updateLesson: (id, patch: LessonPatch) => {
+    for (const course of coursesData) {
+      for (const mod of course.modules) {
+        const lesson = mod.lessons.find((l) => l.id === id);
+        if (lesson) {
+          Object.assign(lesson, patch);
+          return tick(lesson);
+        }
+      }
+    }
+    throw new Error("Lección no encontrada");
+  },
+  removeLesson: (id) => {
+    for (const course of coursesData) {
+      for (const mod of course.modules) {
+        const index = mod.lessons.findIndex((l) => l.id === id);
+        if (index >= 0) {
+          mod.lessons.splice(index, 1);
+          course.lessonCount = Math.max(0, course.lessonCount - 1);
+          return tick(undefined);
+        }
+      }
+    }
+    return tick(undefined);
+  },
 };
+
+const templatesData: MessageTemplate[] = [...SEED_MESSAGE_TEMPLATES];
 
 const duplication: DuplicationRepository = {
   listPlaybooks: (filter) =>
@@ -237,12 +413,39 @@ const duplication: DuplicationRepository = {
     ),
   listMessageTemplates: (filter) =>
     tick(
-      filter?.category
-        ? SEED_MESSAGE_TEMPLATES.filter(
-            (template) => template.category === filter.category,
-          )
-        : [...SEED_MESSAGE_TEMPLATES],
+      templatesData
+        .filter((t) => (filter?.category ? t.category === filter.category : true))
+        .filter((t) =>
+          filter && "businessId" in filter
+            ? t.businessId === filter.businessId || t.businessId === null
+            : true,
+        ),
     ),
+  createMessageTemplate: (input: NewMessageTemplateInput) => {
+    const template: MessageTemplate = {
+      id: `mt-${templatesData.length + 1}-${Date.now()}`,
+      businessId: input.businessId,
+      title: input.title.trim(),
+      category: input.category,
+      situation: input.situation.trim(),
+      baseText: input.baseText.trim(),
+      defaultTone: input.defaultTone,
+      complianceHint: input.complianceHint.trim(),
+    };
+    templatesData.unshift(template);
+    return tick(template);
+  },
+  updateMessageTemplate: (id, patch: MessageTemplatePatch) => {
+    const template = templatesData.find((t) => t.id === id);
+    if (!template) throw new Error("Plantilla no encontrada");
+    Object.assign(template, patch);
+    return tick(template);
+  },
+  removeMessageTemplate: (id) => {
+    const index = templatesData.findIndex((t) => t.id === id);
+    if (index >= 0) templatesData.splice(index, 1);
+    return tick(undefined);
+  },
   listResources: (filter) =>
     tick(
       SEED_RESOURCES.filter((resource) =>
@@ -404,12 +607,68 @@ const activity: ActivityRepository = {
   },
 };
 
+const audiobooksData: Audiobook[] = [];
+
+const audiobooks: AudiobookRepository = {
+  list: (filter) =>
+    tick(
+      audiobooksData
+        .filter((a) => a.isPublished)
+        .filter((a) =>
+          filter && "businessId" in filter
+            ? a.businessId === filter.businessId || a.businessId === null
+            : true,
+        )
+        .sort((a, b) => a.sortOrder - b.sortOrder),
+    ),
+  listAdmin: (businessId) =>
+    tick(
+      audiobooksData
+        .filter((a) => a.businessId === businessId)
+        .sort((a, b) => a.sortOrder - b.sortOrder),
+    ),
+  getBySlug: (slug) => tick(audiobooksData.find((a) => a.slug === slug) ?? null),
+  create: (input: NewAudiobookInput) => {
+    const now = new Date().toISOString();
+    const audiobook: Audiobook = {
+      id: `ab-${audiobooksData.length + 1}-${now}`,
+      businessId: input.businessId,
+      slug: mockSlug(input.title, (s) => audiobooksData.some((a) => a.slug === s)),
+      title: input.title.trim(),
+      author: input.author.trim(),
+      description: input.description.trim(),
+      coverUrl: input.coverUrl ?? null,
+      audioUrl: input.audioUrl ?? null,
+      audioPath: input.audioPath ?? null,
+      category: input.category.trim() || "General",
+      durationSeconds: input.durationSeconds ?? 0,
+      isPublished: input.isPublished ?? false,
+      sortOrder: input.sortOrder ?? 0,
+      createdAt: now,
+    };
+    audiobooksData.unshift(audiobook);
+    return tick(audiobook);
+  },
+  update: (id, patch: AudiobookPatch) => {
+    const audiobook = audiobooksData.find((a) => a.id === id);
+    if (!audiobook) throw new Error("Audiolibro no encontrado");
+    Object.assign(audiobook, patch);
+    return tick(audiobook);
+  },
+  remove: (id) => {
+    const index = audiobooksData.findIndex((a) => a.id === id);
+    if (index >= 0) audiobooksData.splice(index, 1);
+    return tick(undefined);
+  },
+};
+
 export const mockRepositories: Repositories = {
   businesses,
   users,
   feed,
   academy,
   duplication,
+  audiobooks,
   prospects,
   interactions,
   learnings,

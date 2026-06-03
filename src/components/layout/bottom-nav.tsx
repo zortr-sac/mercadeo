@@ -2,17 +2,15 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useSession } from "@/components/session-provider";
 import { ROUTES } from "@/lib/constants";
 import { isActive, NAV_ITEMS } from "@/lib/nav";
 import { cn } from "@/lib/utils";
 
 export function BottomNav() {
   const pathname = usePathname();
-  const user = useSession();
-  const items = NAV_ITEMS.filter((item) =>
-    item.href === ROUTES.admin ? user.role === "admin" : true,
-  ).slice(0, 4);
+  // El admin/líder gestiona desde el sidebar (escritorio); el bottom-nav
+  // muestra las secciones de uso diario del cliente.
+  const items = NAV_ITEMS.filter((item) => item.href !== ROUTES.admin);
 
   return (
     <nav

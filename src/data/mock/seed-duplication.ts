@@ -131,6 +131,7 @@ export const SEED_SCRIPTS: Script[] = [
 export const SEED_MESSAGE_TEMPLATES: MessageTemplate[] = [
   {
     id: "mt-first",
+    businessId: null,
     title: "Primer mensaje personalizado",
     category: "prospecting",
     situation: "Cuando quieres iniciar una conversacion sin invadir.",
@@ -141,6 +142,7 @@ export const SEED_MESSAGE_TEMPLATES: MessageTemplate[] = [
   },
   {
     id: "mt-objection",
+    businessId: null,
     title: "Responder objecion",
     category: "objection",
     situation: "Cuando el prospecto dice que no tiene tiempo, dinero o desconfia.",
@@ -151,6 +153,7 @@ export const SEED_MESSAGE_TEMPLATES: MessageTemplate[] = [
   },
   {
     id: "mt-followup",
+    businessId: null,
     title: "Seguimiento amable",
     category: "followup",
     situation: "Cuando ya compartiste informacion y toca consultar dudas.",
@@ -161,6 +164,7 @@ export const SEED_MESSAGE_TEMPLATES: MessageTemplate[] = [
   },
   {
     id: "mt-reactivation",
+    businessId: null,
     title: "Reactivar sin incomodar",
     category: "reactivation",
     situation: "Cuando una conversacion quedo fria.",

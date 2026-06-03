@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Node tooling / E2E + screenshot harnesses (CommonJS, not app source).
+    "scripts/**",
   ]),
 ]);
 

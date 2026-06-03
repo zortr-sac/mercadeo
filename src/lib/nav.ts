@@ -1,6 +1,7 @@
 import {
   Bell,
   GraduationCap,
+  Headphones,
   Home,
   MessageCircle,
   Newspaper,
@@ -37,6 +38,12 @@ export const NAV_ITEMS: NavItem[] = [
     href: ROUTES.academia,
     icon: GraduationCap,
     match: "/academia",
+  },
+  {
+    label: "Audiolibros",
+    href: ROUTES.audiolibros,
+    icon: Headphones,
+    match: "/audiolibros",
   },
   {
     label: "Admin",

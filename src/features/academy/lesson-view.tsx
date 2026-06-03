@@ -18,6 +18,7 @@ import {
 import { ROUTES } from "@/lib/constants";
 import { useProgressStore } from "@/store/progress-store";
 import { cn } from "@/lib/utils";
+import { isFileVideoUrl } from "@/lib/media";
 import { logLessonCompletedAction } from "@/features/constancia/actions";
 
 /** Vista de una lección: contenido + marcar completada + navegación. */
@@ -56,13 +57,24 @@ export function LessonView({
 
       {lesson.contentType === "video" && lesson.videoUrl && (
         <div className="aspect-video overflow-hidden rounded-[var(--radius-lg)] border border-border bg-black">
-          <iframe
-            src={lesson.videoUrl}
-            title={lesson.title}
-            className="size-full"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-          />
+          {isFileVideoUrl(lesson.videoUrl) ? (
+            <video
+              src={lesson.videoUrl}
+              title={lesson.title}
+              className="size-full"
+              controls
+              preload="metadata"
+              playsInline
+            />
+          ) : (
+            <iframe
+              src={lesson.videoUrl}
+              title={lesson.title}
+              className="size-full"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
+          )}
         </div>
       )}
 

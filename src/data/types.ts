@@ -268,6 +268,25 @@ export interface Resource {
   sizeLabel: string | null;
 }
 
+/* ============================ Audiolibros ============================ */
+
+export interface Audiobook {
+  id: string;
+  businessId: string | null;
+  slug: string;
+  title: string;
+  author: string;
+  description: string;
+  coverUrl: string | null;
+  audioUrl: string | null;
+  audioPath: string | null;
+  category: string;
+  durationSeconds: number;
+  isPublished: boolean;
+  sortOrder: number;
+  createdAt: string;
+}
+
 /* ============================ Prospectos (CRM simple) ============================ */
 
 export const PROSPECT_STAGES = {
@@ -423,6 +442,7 @@ export type MessageTone = "calm" | "warm" | "direct" | "reactivation";
 
 export interface MessageTemplate {
   id: string;
+  businessId: string | null;
   title: string;
   category: ScriptCategory;
   situation: string;

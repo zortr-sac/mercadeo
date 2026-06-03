@@ -13,11 +13,11 @@ export type Action =
 /** Rango mínimo requerido por acción. */
 const REQUIRED_RANK: Record<Action, number> = {
   "feed.create": ROLE_RANK.leader,
-  "feed.pin": ROLE_RANK.admin,
-  "academy.manage": ROLE_RANK.admin,
+  "feed.pin": ROLE_RANK.leader,
+  "academy.manage": ROLE_RANK.leader,
   "users.manage": ROLE_RANK.admin,
   "team.view": ROLE_RANK.leader,
-  "admin.access": ROLE_RANK.admin,
+  "admin.access": ROLE_RANK.leader,
 };
 
 /** ¿Puede `role` ejecutar `action`? */
