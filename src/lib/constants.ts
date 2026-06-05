@@ -88,7 +88,21 @@ export const SESSION_COOKIE = "nexo_mentor_session";
 export const DATA_SOURCE: "mock" | "supabase" =
   process.env.NEXT_PUBLIC_DATA_SOURCE === "supabase" ? "supabase" : "mock";
 
-export const DEFAULT_SUBSCRIPTION_PRICE_PEN = 15;
+/**
+ * Pago y contacto de la plataforma. Mientras no exista pasarela de pago, el
+ * alta de clientes se cierra por WhatsApp + Yape a este número. Fuente única:
+ * cambia el monto o el número aquí y se refleja en todo el flujo de registro.
+ */
+export const PAYMENT = {
+  pricePen: 20,
+  /** Número local para mostrar al usuario. */
+  whatsappDisplay: "908 765 016",
+  /** Formato internacional (Perú +51) para enlaces wa.me. */
+  whatsappIntl: "51908765016",
+  yapeDisplay: "908 765 016",
+} as const;
+
+export const DEFAULT_SUBSCRIPTION_PRICE_PEN = PAYMENT.pricePen;
 
 export const LEGAL_DISCLAIMERS = {
   sales:

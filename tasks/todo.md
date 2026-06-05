@@ -35,7 +35,18 @@ mantener informado, enseñar, y un **sistema de duplicación** para presentar ne
 - [x] Build de producción limpio (19 rutas, sin errores, ~172 kB First Load JS)
 - [x] Prueba E2E con navegador (login, módulos, crear post, modo oscuro, móvil + desktop)
 
+## Cambios (2026-06-03)
+- [x] **Registro público de clientes funcional**: el formulario `/registro/[businessSlug]`
+  era cosmético (solo mostraba "Registro recibido", no creaba cuenta). Ahora crea la
+  cuenta real en Supabase Auth con contraseña vía `registerMemberAction`
+  (`src/features/registration/registration-actions.ts`): valida con Zod server-side,
+  fuerza rol `member`, deriva el negocio del slug, `email_confirm` para ingreso inmediato
+  y rollback si falla el perfil. UI con campo de contraseña + pantalla "Cuenta creada"
+  que enlaza a `/login`. Verificado E2E con Playwright (registro → login → dashboard).
+
 ## Pendiente / Próximos pasos
+- [ ] Integrar pasarela de pago antes de activar la cuenta (hoy queda activa sin cobro).
+- [ ] Rate limiting / anti-abuso en el alta pública (usa service role).
 - [ ] Esquema Supabase + RLS: escribir migración SQL (tablas, enums, índices, policies) y `seed.sql`.
 - [ ] Implementar `src/data/supabase/*` (mismo contrato de repositorio) y activar con `NEXT_PUBLIC_DATA_SOURCE=supabase`.
 - [ ] Auth real con `@supabase/ssr` (cookies httpOnly, refresh en middleware).
