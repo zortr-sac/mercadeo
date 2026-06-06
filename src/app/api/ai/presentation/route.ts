@@ -3,6 +3,7 @@ import { z } from "zod";
 import { checkCompliance, makeSafeAlternative } from "@/lib/ai/compliance";
 import { generateWithGemini } from "@/lib/ai/gemini";
 import { parseInlineImage } from "@/lib/ai/image-input";
+import { getRepositories } from "@/data";
 import { assertWithinBudget, recordAiUsage } from "@/lib/ai/usage";
 import { LEGAL_DISCLAIMERS } from "@/lib/constants";
 import { requireSession } from "@/lib/session";
@@ -86,9 +87,17 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "ai_limit" }, { status: 429 });
   }
 
+  const business = user.businessId
+    ? await getRepositories().businesses.getById(user.businessId)
+    : null;
+  const extra = business?.presentationPrompt?.trim();
+  const system = extra
+    ? `${SYSTEM_PROMPT}\n\n--- Instrucciones del negocio (mantén el formato JSON y las reglas anteriores) ---\n${extra}`
+    : SYSTEM_PROMPT;
+
   const reference = parseInlineImage(imageBase64, imageMimeType);
   const generated = await generateWithGemini({
-    system: SYSTEM_PROMPT,
+    system,
     prompt: reference
       ? `Tema: "${topic}". Considera la imagen adjunta como contexto del producto o tema. Genera el JSON de la presentacion.`
       : `Tema: "${topic}". Genera el JSON de la presentacion.`,

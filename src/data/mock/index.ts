@@ -4,6 +4,9 @@ import type {
   ActivityRepository,
   AudiobookPatch,
   AudiobookRepository,
+  NewPresentationTemplateInput,
+  PresentationTemplatePatch,
+  PresentationTemplateRepository,
   UsageRepository,
   BusinessRepository,
   CoursePatch,
@@ -42,6 +45,7 @@ import type {
   Learning,
   Lesson,
   MessageTemplate,
+  PresentationTemplate,
   Prospect,
   ProspectInteraction,
   SubscriptionPayment,
@@ -114,6 +118,8 @@ const businesses: BusinessRepository = {
       logoUrl: null,
       primaryColor: input.primaryColor,
       accentColor: input.accentColor,
+      flyerPrompt: "",
+      presentationPrompt: "",
       customDomain: input.customDomain?.trim() || null,
       registrationPath: `/registro/${slug}`,
       subscriptionPricePen: DEFAULT_SUBSCRIPTION_PRICE_PEN,
@@ -136,6 +142,14 @@ const businesses: BusinessRepository = {
     if (business) {
       business.primaryColor = primaryColor;
       business.accentColor = accentColor;
+    }
+    return tick(undefined);
+  },
+  updatePrompts: (id, flyerPrompt, presentationPrompt) => {
+    const business = businessesData.find((item) => item.id === id);
+    if (business) {
+      business.flyerPrompt = flyerPrompt;
+      business.presentationPrompt = presentationPrompt;
     }
     return tick(undefined);
   },
@@ -623,6 +637,61 @@ const audiobooks: AudiobookRepository = {
   },
 };
 
+const presentationTemplatesData: PresentationTemplate[] = [];
+
+const presentationTemplates: PresentationTemplateRepository = {
+  list: (filter) =>
+    tick(
+      presentationTemplatesData
+        .filter((p) => p.isPublished)
+        .filter((p) =>
+          filter && "businessId" in filter
+            ? p.businessId === filter.businessId || p.businessId === null
+            : true,
+        )
+        .sort((a, b) => a.sortOrder - b.sortOrder),
+    ),
+  listAdmin: (businessId) =>
+    tick(
+      presentationTemplatesData
+        .filter((p) => p.businessId === businessId)
+        .sort((a, b) => a.sortOrder - b.sortOrder),
+    ),
+  getBySlug: (slug) =>
+    tick(presentationTemplatesData.find((p) => p.slug === slug) ?? null),
+  create: (input: NewPresentationTemplateInput) => {
+    const now = new Date().toISOString();
+    const tpl: PresentationTemplate = {
+      id: `pt-${presentationTemplatesData.length + 1}-${now}`,
+      businessId: input.businessId,
+      slug: mockSlug(input.title, (s) => presentationTemplatesData.some((p) => p.slug === s)),
+      title: input.title.trim(),
+      description: input.description.trim(),
+      coverUrl: input.coverUrl ?? null,
+      fileUrl: input.fileUrl ?? null,
+      filePath: input.filePath ?? null,
+      fileName: input.fileName ?? null,
+      fileBytes: input.fileBytes ?? 0,
+      isPublished: input.isPublished ?? false,
+      sortOrder: input.sortOrder ?? 0,
+      createdAt: now,
+    };
+    presentationTemplatesData.unshift(tpl);
+    return tick(tpl);
+  },
+  update: (id, patch: PresentationTemplatePatch) => {
+    const tpl = presentationTemplatesData.find((p) => p.id === id);
+    if (!tpl) throw new Error("Plantilla no encontrada");
+    Object.assign(tpl, patch);
+    return tick(tpl);
+  },
+  remove: (id) => {
+    const index = presentationTemplatesData.findIndex((p) => p.id === id);
+    if (index >= 0) presentationTemplatesData.splice(index, 1);
+    return tick(undefined);
+  },
+};
+
 const usage: UsageRepository = {
   async listForWindow() {
     return [];
@@ -692,6 +761,7 @@ export const mockRepositories: Repositories = {
   academy,
   duplication,
   audiobooks,
+  presentationTemplates,
   prospects,
   interactions,
   learnings,

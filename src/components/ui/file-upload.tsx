@@ -7,23 +7,26 @@ import { uploadMedia, type MediaKind } from "@/lib/supabase/storage";
 import {
   AUDIO_MIME,
   MAX_AUDIO_BYTES,
+  MAX_DOC_BYTES,
   MAX_VIDEO_BYTES,
   VIDEO_MIME,
 } from "@/lib/media";
 import { cn } from "@/lib/utils";
 
-type Accept = "video" | "audio" | "image";
+type Accept = "video" | "audio" | "image" | "document";
 
 const ACCEPT_ATTR: Record<Accept, string> = {
   video: "video/*",
   audio: "audio/*",
   image: "image/*",
+  document: ".pdf,.ppt,.pptx",
 };
 
 const DEFAULT_MAX: Record<Accept, number> = {
   video: MAX_VIDEO_BYTES,
   audio: MAX_AUDIO_BYTES,
   image: 5 * 1024 * 1024,
+  document: MAX_DOC_BYTES,
 };
 
 function mb(bytes: number) {
@@ -32,7 +35,7 @@ function mb(bytes: number) {
 
 /** Lee la duración (segundos) de un archivo de audio/video; 0 si no aplica. */
 function readDuration(file: File, accept: Accept): Promise<number> {
-  if (accept === "image") return Promise.resolve(0);
+  if (accept === "image" || accept === "document") return Promise.resolve(0);
   return new Promise((resolve) => {
     const el = document.createElement(accept === "video" ? "video" : "audio");
     el.preload = "metadata";
@@ -60,7 +63,13 @@ export function FileUpload({
   maxBytes?: number;
   currentUrl?: string | null;
   label?: string;
-  onUploaded: (result: { url: string; path: string; durationSeconds: number }) => void;
+  onUploaded: (result: {
+    url: string;
+    path: string;
+    durationSeconds: number;
+    bytes: number;
+    name: string;
+  }) => void;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [state, setState] = useState<"idle" | "uploading" | "done">(
@@ -74,22 +83,31 @@ export function FileUpload({
       toast.error(`El archivo supera el máximo (${mb(limit)}).`);
       return;
     }
-    const allowed =
-      accept === "video"
-        ? VIDEO_MIME
-        : accept === "audio"
-          ? AUDIO_MIME
-          : ["image/png", "image/jpeg", "image/webp"];
-    if (file.type && !allowed.includes(file.type)) {
-      toast.error("Formato de archivo no admitido.");
-      return;
+    if (accept === "document") {
+      const dot = file.name.lastIndexOf(".");
+      const ext = dot >= 0 ? file.name.slice(dot).toLowerCase() : "";
+      if (![".pdf", ".ppt", ".pptx"].includes(ext)) {
+        toast.error("Sube un archivo PPT, PPTX o PDF.");
+        return;
+      }
+    } else {
+      const allowed =
+        accept === "video"
+          ? VIDEO_MIME
+          : accept === "audio"
+            ? AUDIO_MIME
+            : ["image/png", "image/jpeg", "image/webp"];
+      if (file.type && !allowed.includes(file.type)) {
+        toast.error("Formato de archivo no admitido.");
+        return;
+      }
     }
     setState("uploading");
     setName(file.name);
     try {
       const durationSeconds = await readDuration(file, accept);
       const { url, path } = await uploadMedia(file, businessId, folder);
-      onUploaded({ url, path, durationSeconds });
+      onUploaded({ url, path, durationSeconds, bytes: file.size, name: file.name });
       setState("done");
       toast.success("Archivo subido.");
     } catch {
@@ -152,7 +170,7 @@ export function FileUpload({
           onClick={() => {
             setState("idle");
             setName("");
-            onUploaded({ url: "", path: "", durationSeconds: 0 });
+            onUploaded({ url: "", path: "", durationSeconds: 0, bytes: 0, name: "" });
           }}
           className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
         >

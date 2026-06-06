@@ -17,6 +17,7 @@ import type {
   MessageTone,
   Playbook,
   PlaybookType,
+  PresentationTemplate,
   Profile,
   Prospect,
   ProspectInteraction,
@@ -57,6 +58,8 @@ export interface BusinessRepository {
   updateDomain(id: string, hostname: string | null): Promise<void>;
   /** Actualiza el color de marca (unicolor). */
   updateBranding(id: string, primaryColor: string, accentColor: string): Promise<void>;
+  /** Instrucciones base de IA por negocio que se suman al prompt (anuncios y presentaciones). */
+  updatePrompts(id: string, flyerPrompt: string, presentationPrompt: string): Promise<void>;
   createContent(input: NewBusinessContentInput): Promise<BusinessContent>;
 }
 
@@ -183,6 +186,29 @@ export interface AudiobookRepository {
   remove(id: string): Promise<void>;
 }
 
+export interface NewPresentationTemplateInput {
+  businessId: string | null;
+  title: string;
+  description: string;
+  coverUrl?: string | null;
+  fileUrl?: string | null;
+  filePath?: string | null;
+  fileName?: string | null;
+  fileBytes?: number;
+  isPublished?: boolean;
+  sortOrder?: number;
+}
+export type PresentationTemplatePatch = Partial<Omit<NewPresentationTemplateInput, "businessId">>;
+
+export interface PresentationTemplateRepository {
+  list(filter?: { businessId?: string | null }): Promise<PresentationTemplate[]>;
+  listAdmin(businessId: string): Promise<PresentationTemplate[]>;
+  getBySlug(slug: string): Promise<PresentationTemplate | null>;
+  create(input: NewPresentationTemplateInput): Promise<PresentationTemplate>;
+  update(id: string, patch: PresentationTemplatePatch): Promise<PresentationTemplate>;
+  remove(id: string): Promise<void>;
+}
+
 export interface NewProspectInput {
   ownerId: string;
   businessId: string | null;
@@ -302,6 +328,7 @@ export interface Repositories {
   academy: AcademyRepository;
   duplication: DuplicationRepository;
   audiobooks: AudiobookRepository;
+  presentationTemplates: PresentationTemplateRepository;
   prospects: ProspectRepository;
   interactions: InteractionRepository;
   learnings: LearningRepository;

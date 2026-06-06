@@ -12,6 +12,10 @@ export interface Business {
   logoUrl: string | null;
   primaryColor: string;
   accentColor: string;
+  /** Instrucciones del admin que se SUMAN al prompt base de la IA al crear anuncios. */
+  flyerPrompt: string;
+  /** Instrucciones del admin que se SUMAN al prompt base de la IA al crear presentaciones. */
+  presentationPrompt: string;
   customDomain: string | null;
   registrationPath: string;
   subscriptionPricePen: number;
@@ -270,6 +274,24 @@ export interface Audiobook {
   audioPath: string | null;
   category: string;
   durationSeconds: number;
+  isPublished: boolean;
+  sortOrder: number;
+  createdAt: string;
+}
+
+/* ===================== Plantillas de presentación ===================== */
+
+export interface PresentationTemplate {
+  id: string;
+  businessId: string | null;
+  slug: string;
+  title: string;
+  description: string;
+  coverUrl: string | null;
+  fileUrl: string | null;
+  filePath: string | null;
+  fileName: string | null;
+  fileBytes: number;
   isPublished: boolean;
   sortOrder: number;
   createdAt: string;

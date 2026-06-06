@@ -6,6 +6,9 @@ import type {
   ActivityRepository,
   AudiobookPatch,
   AudiobookRepository,
+  NewPresentationTemplateInput,
+  PresentationTemplatePatch,
+  PresentationTemplateRepository,
   UsageRepository,
   BusinessRepository,
   CoursePatch,
@@ -46,6 +49,7 @@ import type {
   Lesson,
   MessageTemplate,
   Playbook,
+  PresentationTemplate,
   Profile,
   Prospect,
   ProspectInteraction,
@@ -69,6 +73,8 @@ function mapBusiness(row: any): Business {
     logoUrl: row.logo_path ?? null,
     primaryColor: row.primary_color,
     accentColor: row.accent_color,
+    flyerPrompt: row.flyer_prompt ?? "",
+    presentationPrompt: row.presentation_prompt ?? "",
     customDomain: row.custom_domain ?? null,
     registrationPath: `/registro/${row.slug}`,
     subscriptionPricePen: row.subscription_price_pen,
@@ -223,6 +229,24 @@ function mapAudiobook(row: any): Audiobook {
     audioPath: row.audio_path ?? null,
     category: row.category ?? "General",
     durationSeconds: row.duration_seconds ?? 0,
+    isPublished: row.is_published ?? false,
+    sortOrder: row.sort_order ?? 0,
+    createdAt: row.created_at,
+  };
+}
+
+function mapPresentationTemplate(row: any): PresentationTemplate {
+  return {
+    id: row.id,
+    businessId: row.business_id ?? null,
+    slug: row.slug,
+    title: row.title,
+    description: row.description ?? "",
+    coverUrl: row.cover_url ?? null,
+    fileUrl: row.file_url ?? null,
+    filePath: row.file_path ?? null,
+    fileName: row.file_name ?? null,
+    fileBytes: Number(row.file_bytes ?? 0),
     isPublished: row.is_published ?? false,
     sortOrder: row.sort_order ?? 0,
     createdAt: row.created_at,
@@ -473,6 +497,19 @@ const businesses: BusinessRepository = {
       .update({
         primary_color: primaryColor,
         accent_color: accentColor,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", id);
+    if (error) throw error;
+  },
+  async updatePrompts(id, flyerPrompt, presentationPrompt) {
+    // Service-role: misma razón que updateBranding (RLS no expone UPDATE de businesses).
+    const admin = createAdminClient();
+    const { error } = await admin
+      .from("businesses")
+      .update({
+        flyer_prompt: flyerPrompt,
+        presentation_prompt: presentationPrompt,
         updated_at: new Date().toISOString(),
       })
       .eq("id", id);
@@ -1278,12 +1315,99 @@ const subscriptions: SubscriptionRepository = {
   },
 };
 
+const presentationTemplates: PresentationTemplateRepository = {
+  async list(filter) {
+    const supabase = await db();
+    let query = supabase
+      .from("presentation_templates")
+      .select("*")
+      .eq("is_published", true);
+    if (filter && "businessId" in filter) query = scopeBusiness(query, filter.businessId);
+    const { data, error } = await query.order("sort_order", { ascending: true });
+    if (error) throw error;
+    return (data ?? []).map(mapPresentationTemplate);
+  },
+  async listAdmin(businessId) {
+    const supabase = await db();
+    const { data, error } = await supabase
+      .from("presentation_templates")
+      .select("*")
+      .eq("business_id", businessId)
+      .order("sort_order", { ascending: true });
+    if (error) throw error;
+    return (data ?? []).map(mapPresentationTemplate);
+  },
+  async getBySlug(slug) {
+    const supabase = await db();
+    const { data } = await supabase
+      .from("presentation_templates")
+      .select("*")
+      .eq("slug", slug)
+      .maybeSingle();
+    return data ? mapPresentationTemplate(data) : null;
+  },
+  async create(input: NewPresentationTemplateInput) {
+    const supabase = await db();
+    const slug = await uniqueSlug(supabase, "presentation_templates", input.title);
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    const { data, error } = await supabase
+      .from("presentation_templates")
+      .insert({
+        business_id: input.businessId,
+        slug,
+        title: input.title.trim(),
+        description: input.description.trim(),
+        cover_url: input.coverUrl ?? null,
+        file_url: input.fileUrl ?? null,
+        file_path: input.filePath ?? null,
+        file_name: input.fileName ?? null,
+        file_bytes: input.fileBytes ?? 0,
+        is_published: input.isPublished ?? false,
+        sort_order: input.sortOrder ?? 0,
+        created_by: user?.id ?? null,
+      })
+      .select("*")
+      .single();
+    if (error) throw error;
+    return mapPresentationTemplate(data);
+  },
+  async update(id, patch: PresentationTemplatePatch) {
+    const supabase = await db();
+    const row: Record<string, unknown> = { updated_at: new Date().toISOString() };
+    if (patch.title !== undefined) row.title = patch.title;
+    if (patch.description !== undefined) row.description = patch.description;
+    if (patch.coverUrl !== undefined) row.cover_url = patch.coverUrl;
+    if (patch.fileUrl !== undefined) row.file_url = patch.fileUrl;
+    if (patch.filePath !== undefined) row.file_path = patch.filePath;
+    if (patch.fileName !== undefined) row.file_name = patch.fileName;
+    if (patch.fileBytes !== undefined) row.file_bytes = patch.fileBytes;
+    if (patch.isPublished !== undefined) row.is_published = patch.isPublished;
+    if (patch.sortOrder !== undefined) row.sort_order = patch.sortOrder;
+    const { data, error } = await supabase
+      .from("presentation_templates")
+      .update(row)
+      .eq("id", id)
+      .select("*")
+      .single();
+    if (error) throw error;
+    return mapPresentationTemplate(data);
+  },
+  async remove(id) {
+    const supabase = await db();
+    const { error } = await supabase.from("presentation_templates").delete().eq("id", id);
+    if (error) throw error;
+  },
+};
+
 export const supabaseRepositories: Repositories = {
   businesses,
   users,
   academy,
   duplication,
   audiobooks,
+  presentationTemplates,
   prospects,
   interactions,
   learnings,

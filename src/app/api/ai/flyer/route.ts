@@ -3,6 +3,7 @@ import { z } from "zod";
 import { checkCompliance } from "@/lib/ai/compliance";
 import { generateImageWithGemini } from "@/lib/ai/gemini";
 import { parseInlineImage } from "@/lib/ai/image-input";
+import { getRepositories } from "@/data";
 import { assertWithinBudget, recordAiUsage } from "@/lib/ai/usage";
 import { LEGAL_DISCLAIMERS } from "@/lib/constants";
 import { requireSession } from "@/lib/session";
@@ -16,15 +17,23 @@ const requestSchema = z.object({
   imageMimeType: z.enum(["image/png", "image/jpeg", "image/webp"]).optional(),
 });
 
-function buildPrompt(description: string, kind?: string, hasImage?: boolean): string {
+function buildPrompt(
+  description: string,
+  kind?: string,
+  hasImage?: boolean,
+  businessInstructions?: string,
+): string {
   const angle = kind ? ` It is a "${kind}" style ad.` : "";
   const reference = hasImage
     ? " Use the attached reference image as the real product/subject of the ad; keep it recognizable and faithful to it."
     : "";
+  const guidelines = businessInstructions
+    ? ` Brand/business guidelines to follow: ${businessInstructions}`
+    : "";
   return [
     "Create a clean, modern advertising flyer image for a wellness or beauty product,",
     "vertical 4:5 aspect, suitable to share on social media (Instagram, WhatsApp, TikTok).",
-    `Subject: ${description}.${angle}${reference}`,
+    `Subject: ${description}.${angle}${reference}${guidelines}`,
     "Warm, trustworthy and friendly tone; soft natural lighting; a tidy, attractive composition;",
     "real-looking product. Spanish-speaking adult audience.",
     "IMPORTANT: do NOT include any text that promises income, earnings, getting rich, or guaranteed",
@@ -57,9 +66,17 @@ export async function POST(request: Request) {
     });
   }
 
+  const business = user.businessId
+    ? await getRepositories().businesses.getById(user.businessId)
+    : null;
   const reference = parseInlineImage(imageBase64, imageMimeType);
   const image = await generateImageWithGemini({
-    prompt: buildPrompt(description, kind, Boolean(reference)),
+    prompt: buildPrompt(
+      description,
+      kind,
+      Boolean(reference),
+      business?.flyerPrompt?.trim() || undefined,
+    ),
     image: reference,
   });
 
