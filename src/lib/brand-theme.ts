@@ -62,10 +62,21 @@ export function brandThemeVars(primaryHex: string | null | undefined): Record<st
   const norm = primaryHex && primaryHex.startsWith("#") ? primaryHex : `#${primaryHex ?? ""}`;
   const base = isValidHex(norm) ? norm : DEFAULT_BRAND;
   const rgb = hexToRgb(base);
+  const dark = mix(rgb, BLACK, 0.18);
+  const tint = mix(rgb, WHITE, 0.8);
+  const soft = mix(rgb, WHITE, 0.92);
+  // Unicolor: naranja y verde también toman el color de marca. Se inyectan
+  // CONCRETOS (no se puede confiar en el alias `var(--blue)` de :root, porque
+  // éste resuelve --blue en :root, no el override de .ns-app).
   return {
     "--blue": base,
-    "--blue-dark": mix(rgb, BLACK, 0.18),
-    "--blue-tint": mix(rgb, WHITE, 0.8),
-    "--blue-soft": mix(rgb, WHITE, 0.92),
+    "--blue-dark": dark,
+    "--blue-tint": tint,
+    "--blue-soft": soft,
+    "--orange": base,
+    "--orange-light": tint,
+    "--orange-soft": soft,
+    "--green": base,
+    "--green-soft": soft,
   };
 }
