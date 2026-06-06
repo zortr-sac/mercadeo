@@ -55,6 +55,8 @@ export interface BusinessRepository {
   listContent(businessId: string): Promise<BusinessContent[]>;
   create(input: NewBusinessInput): Promise<Business>;
   updateDomain(id: string, hostname: string | null): Promise<void>;
+  /** Actualiza el color de marca (unicolor). */
+  updateBranding(id: string, primaryColor: string, accentColor: string): Promise<void>;
   createContent(input: NewBusinessContentInput): Promise<BusinessContent>;
 }
 

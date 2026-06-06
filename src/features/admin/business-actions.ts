@@ -8,7 +8,8 @@ import type {
 } from "@/data/repositories";
 import type { Business, BusinessContent } from "@/data/types";
 import { ROUTES } from "@/lib/constants";
-import { requireRole } from "@/lib/session";
+import { isValidHex } from "@/lib/brand-theme";
+import { requireBusinessAdmin, requireRole } from "@/lib/session";
 
 /** Crea un negocio (solo admin de plataforma). */
 export async function createBusinessAction(
@@ -28,6 +29,24 @@ export async function updateBusinessDomainAction(
   await requireRole("leader");
   await getRepositories().businesses.updateDomain(id, hostname);
   revalidatePath(ROUTES.admin);
+}
+
+/** Actualiza el color de marca del negocio (unicolor). Admin o líder del negocio. */
+export async function updateBusinessBrandingAction(
+  businessId: string,
+  color: string,
+): Promise<{ ok: boolean; error?: string }> {
+  await requireBusinessAdmin(businessId);
+  if (!isValidHex(color)) {
+    return { ok: false, error: "Color inválido" };
+  }
+  try {
+    await getRepositories().businesses.updateBranding(businessId, color, color);
+    revalidatePath(ROUTES.admin);
+    return { ok: true };
+  } catch {
+    return { ok: false, error: "No se pudo guardar el color." };
+  }
 }
 
 /** Publica contenido para un negocio (admin de plataforma o de negocio). */

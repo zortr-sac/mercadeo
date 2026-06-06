@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { type CSSProperties, useState } from "react";
 import { toast } from "sonner";
 import {
   Btn,
@@ -15,6 +15,7 @@ import {
 } from "@/components/netscale/ui";
 import { Icon, type IconName } from "@/components/netscale/icons";
 import { LEGAL_DISCLAIMERS, PAYMENT } from "@/lib/constants";
+import { brandThemeVars } from "@/lib/brand-theme";
 import type { Business } from "@/data/types";
 
 const YAPE_PLAIN = PAYMENT.yapeDisplay.replace(/\s/g, "");
@@ -117,7 +118,7 @@ export function BusinessRegistration({
 
   return (
     <div className="ns-shell">
-      <div className="ns-app ns-screen">
+      <div className="ns-app ns-screen" style={brandThemeVars(business.primaryColor) as CSSProperties}>
         {/* Brand header del negocio */}
         <header
           style={{

@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { type CSSProperties, useState, useTransition } from "react";
 import { toast } from "sonner";
 import { Btn, Card, Field, TextInput } from "@/components/netscale/ui";
+import { brandThemeVars } from "@/lib/brand-theme";
 import { loginWithPinAction } from "./pin-login-action";
 
 /** Login por negocio: teléfono + PIN de 4 dígitos. Identidad NetScale. */
@@ -20,7 +21,6 @@ export function BusinessLoginScreen({
   const [phone, setPhone] = useState("");
   const [pin, setPin] = useState("");
   const [pending, start] = useTransition();
-  const tenant = primaryColor || "var(--blue)";
 
   function submit() {
     if (phone.replace(/\D+/g, "").length < 6) {
@@ -39,7 +39,10 @@ export function BusinessLoginScreen({
 
   return (
     <div className="ns-shell">
-      <div className="ns-app ns-screen" style={{ justifyContent: "center" }}>
+      <div
+        className="ns-app ns-screen"
+        style={{ ...brandThemeVars(primaryColor), justifyContent: "center" } as CSSProperties}
+      >
         <div
           className="ns-pad"
           style={{ display: "flex", flexDirection: "column", gap: 22, paddingTop: 40, paddingBottom: 40 }}
@@ -50,7 +53,7 @@ export function BusinessLoginScreen({
                 width: 78,
                 height: 78,
                 borderRadius: 20,
-                background: tenant,
+                background: "var(--blue)",
                 color: "#fff",
                 display: "grid",
                 placeItems: "center",

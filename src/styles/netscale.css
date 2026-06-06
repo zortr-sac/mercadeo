@@ -10,17 +10,19 @@
   --blue-dark: #1E40AF;
   --blue-soft: #EFF4FF;
   --blue-tint: #DBE6FF;
-  --orange: #EA580C;
-  --orange-light: #FB923C;
-  --orange-soft: #FFF1E8;
+  /* Unicolor: naranja y verde siguen al color de marca (--blue, que el shell
+     inyecta por negocio). El default deja de tener acentos verdes/naranjas. */
+  --orange: var(--blue);
+  --orange-light: var(--blue-tint);
+  --orange-soft: var(--blue-soft);
   --bg: #F8FAFC;
   --surface: #FFFFFF;
   --border: #E2E8F0;
   --border-strong: #CBD5E1;
   --text: #0F172A;
   --text-2: #475569;
-  --green: #16A34A;
-  --green-soft: #E7F6EC;
+  --green: var(--blue);
+  --green-soft: var(--blue-soft);
   --locked: #94A3B8;
   --locked-soft: #EEF2F6;
 

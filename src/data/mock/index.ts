@@ -131,6 +131,14 @@ const businesses: BusinessRepository = {
     if (business) business.customDomain = hostname?.trim() || null;
     return tick(undefined);
   },
+  updateBranding: (id, primaryColor, accentColor) => {
+    const business = businessesData.find((item) => item.id === id);
+    if (business) {
+      business.primaryColor = primaryColor;
+      business.accentColor = accentColor;
+    }
+    return tick(undefined);
+  },
   createContent: (input: NewBusinessContentInput) => {
     const now = new Date().toISOString();
     const item: BusinessContent = {

@@ -94,7 +94,7 @@ export function Btn({
   const FS = size === "sm" ? 17 : size === "md" ? 18 : 20;
   const V: Record<BtnVariant, CSSProperties> = {
     primary: { background: "var(--blue)", color: "#fff", border: "none", boxShadow: "0 4px 12px rgba(29,78,216,.28)" },
-    success: { background: "var(--green)", color: "#fff", border: "none", boxShadow: "0 4px 12px rgba(22,163,74,.26)" },
+    success: { background: "var(--green)", color: "#fff", border: "none", boxShadow: "0 4px 12px rgba(15,23,42,.16)" },
     outline: { background: "var(--surface)", color: "var(--blue)", border: "2px solid var(--blue)", boxShadow: "none" },
     soft: { background: "var(--blue-soft)", color: "var(--blue-dark)", border: "none", boxShadow: "none" },
     danger: { background: "var(--surface)", color: "#DC2626", border: "1.5px solid #FCA5A5", boxShadow: "none" },

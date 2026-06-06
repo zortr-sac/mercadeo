@@ -5,6 +5,7 @@ import { OfflineBootstrap } from "@/components/offline/offline-bootstrap";
 import { AiLimitModal } from "@/features/ai/ai-limit-modal";
 import { NetScaleShell } from "@/components/netscale/shell";
 import { PreviewBar } from "@/components/netscale/preview-bar";
+import { getRepositories } from "@/data";
 import { requireSession } from "@/lib/session";
 import { getEffectiveBusiness } from "@/lib/active-business";
 import { isExpired } from "@/lib/subscription";
@@ -17,7 +18,7 @@ export default async function AppLayout({
   children: React.ReactNode;
 }) {
   const user = await requireSession();
-  const { preview } = await getEffectiveBusiness(user);
+  const { businessId, preview } = await getEffectiveBusiness(user);
 
   // A platform admin doesn't use the client app directly: unless they are
   // previewing a business "as a member", send them to their dashboard.
@@ -31,9 +32,19 @@ export default async function AppLayout({
     redirect(ROUTES.suspendido);
   }
 
+  // Color de marca del negocio: la app del cliente es unicolor y lo adopta.
+  let brandColor = preview?.primaryColor ?? null;
+  if (!brandColor && businessId) {
+    const business = await getRepositories().businesses.getById(businessId);
+    brandColor = business?.primaryColor ?? null;
+  }
+
   return (
     <SessionProvider user={user}>
-      <NetScaleShell topBar={preview ? <PreviewBar businessName={preview.name} /> : undefined}>
+      <NetScaleShell
+        brandColor={brandColor}
+        topBar={preview ? <PreviewBar businessName={preview.name} /> : undefined}
+      >
         {children}
       </NetScaleShell>
       <InstallPrompt />

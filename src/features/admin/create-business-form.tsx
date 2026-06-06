@@ -7,6 +7,8 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
+import { DEFAULT_BRAND } from "@/lib/brand-theme";
+import { ColorPalettePicker } from "./color-palette-picker";
 import { createBusinessAction } from "./business-actions";
 
 /**
@@ -20,15 +22,13 @@ export function CreateBusinessForm() {
 
   const [name, setName] = useState("");
   const [adminEmail, setAdminEmail] = useState("");
-  const [primaryColor, setPrimaryColor] = useState("#0f766e");
-  const [accentColor, setAccentColor] = useState("#f59e0b");
+  const [primaryColor, setPrimaryColor] = useState(DEFAULT_BRAND);
   const [domain, setDomain] = useState("");
 
   function reset() {
     setName("");
     setAdminEmail("");
-    setPrimaryColor("#0f766e");
-    setAccentColor("#f59e0b");
+    setPrimaryColor(DEFAULT_BRAND);
     setDomain("");
   }
 
@@ -44,7 +44,7 @@ export function CreateBusinessForm() {
           name: name.trim(),
           adminEmail: adminEmail.trim().toLowerCase(),
           primaryColor,
-          accentColor,
+          accentColor: primaryColor,
           customDomain: domain.trim() || null,
         });
         toast.success("Negocio creado.");
@@ -94,26 +94,9 @@ export function CreateBusinessForm() {
               required
             />
           </Field>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Color principal" htmlFor="nb-primary">
-              <Input
-                id="nb-primary"
-                type="color"
-                value={primaryColor}
-                onChange={(event) => setPrimaryColor(event.target.value)}
-                className="h-12 p-1"
-              />
-            </Field>
-            <Field label="Color de acento" htmlFor="nb-accent">
-              <Input
-                id="nb-accent"
-                type="color"
-                value={accentColor}
-                onChange={(event) => setAccentColor(event.target.value)}
-                className="h-12 p-1"
-              />
-            </Field>
-          </div>
+          <Field label="Color de la marca" hint="Un solo color: la app del cliente se verá toda de este color.">
+            <ColorPalettePicker value={primaryColor} onChange={setPrimaryColor} />
+          </Field>
           <Field
             label="Dominio propio"
             htmlFor="nb-domain"

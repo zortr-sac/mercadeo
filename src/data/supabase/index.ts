@@ -1,5 +1,6 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import type {
   AcademyRepository,
   ActivityRepository,
@@ -462,6 +463,20 @@ const businesses: BusinessRepository = {
       });
       if (error) throw error;
     }
+  },
+  async updateBranding(id, primaryColor, accentColor) {
+    // Service-role: la tabla `businesses` no expone UPDATE por RLS; la autorización
+    // se valida en la server action (requireBusinessAdmin).
+    const admin = createAdminClient();
+    const { error } = await admin
+      .from("businesses")
+      .update({
+        primary_color: primaryColor,
+        accent_color: accentColor,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", id);
+    if (error) throw error;
   },
   async createContent(input: NewBusinessContentInput) {
     const supabase = await db();

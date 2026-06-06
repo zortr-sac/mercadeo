@@ -8,36 +8,38 @@ import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/field";
 import type { Business } from "@/data/types";
 import { ManagerCard, ManagerHeader, NoticePanel } from "./admin-ui";
-import { updateBusinessDomainAction } from "./business-actions";
+import { ColorPalettePicker } from "./color-palette-picker";
+import {
+  updateBusinessBrandingAction,
+  updateBusinessDomainAction,
+} from "./business-actions";
 
-function ColorSwatch({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-center gap-3 rounded-[var(--radius-md)] border border-border bg-background p-4">
-      <span
-        className="size-10 shrink-0 rounded-[var(--radius-sm)] border border-border"
-        style={{ background: value }}
-        aria-hidden
-      />
-      <div>
-        <p className="text-base font-medium">{label}</p>
-        <p className="font-mono text-sm uppercase text-muted-foreground">
-          {value}
-        </p>
-      </div>
-    </div>
-  );
-}
-
-/** Ajustes del negocio: marca (solo lectura) y dominio propio (editable). */
+/** Ajustes del negocio: color de marca (editable) y dominio propio. */
 export function SettingsManager({ business }: { business: Business }) {
   const router = useRouter();
   const [domain, setDomain] = useState(business.customDomain ?? "");
-  const [pending, startTransition] = useTransition();
+  const [color, setColor] = useState(business.primaryColor);
+  const [savingDomain, startDomain] = useTransition();
+  const [savingColor, startColor] = useTransition();
+
+  const colorChanged = color.toLowerCase() !== business.primaryColor.toLowerCase();
+
+  function saveColor() {
+    startColor(async () => {
+      const res = await updateBusinessBrandingAction(business.id, color);
+      if (res && res.ok === false) {
+        toast.error(res.error ?? "No se pudo guardar el color.");
+        return;
+      }
+      toast.success("Color de la marca actualizado.");
+      router.refresh();
+    });
+  }
 
   function saveDomain(event: React.FormEvent) {
     event.preventDefault();
     const next = domain.trim() || null;
-    startTransition(async () => {
+    startDomain(async () => {
       try {
         await updateBusinessDomainAction(business.id, next);
         toast.success(next ? "Dominio guardado." : "Dominio eliminado.");
@@ -53,17 +55,14 @@ export function SettingsManager({ business }: { business: Business }) {
       <ManagerCard>
         <ManagerHeader
           icon={Palette}
-          title="Marca"
-          description="Los colores se definieron al crear el negocio y dan identidad a la app."
+          title="Color de la marca"
+          description="Un solo color para la app del cliente: se aplica a botones, íconos y acentos."
         />
-        <div className="grid gap-3 sm:grid-cols-2">
-          <ColorSwatch label="Color principal" value={business.primaryColor} />
-          <ColorSwatch label="Color de acento" value={business.accentColor} />
-        </div>
-        <NoticePanel>
-          La marca y los colores son de solo lectura desde aquí. Para cambiarlos,
-          contacta al administrador de la plataforma.
-        </NoticePanel>
+        <ColorPalettePicker value={color} onChange={setColor} />
+        <Button onClick={saveColor} loading={savingColor} disabled={!colorChanged} className="mt-4">
+          <Save className="size-5" aria-hidden />
+          Guardar color
+        </Button>
       </ManagerCard>
 
       <ManagerCard>
@@ -85,7 +84,7 @@ export function SettingsManager({ business }: { business: Business }) {
               placeholder="academia.marca.com"
             />
           </Field>
-          <Button type="submit" loading={pending}>
+          <Button type="submit" loading={savingDomain}>
             <Save className="size-5" aria-hidden />
             Guardar dominio
           </Button>
