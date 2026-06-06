@@ -88,6 +88,11 @@
   scrollbar-width: none;
 }
 .ns-scroll::-webkit-scrollbar { display: none; }
+/* En la region de scroll los hijos NO deben encogerse: conservan su alto natural
+   y dejan que el contenedor scrollee. Sin esto, en flex-column los hijos (p. ej. el
+   hero "Tu racha", que tiene overflow:hidden) se comprimen y recortan su contenido
+   cuando el total supera el viewport. */
+.ns-scroll > * { flex-shrink: 0; }
 
 /* generic helpers */
 .ns-pad { padding: 20px; }

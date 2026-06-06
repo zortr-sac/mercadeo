@@ -1,29 +1,47 @@
 "use client";
-// Pantalla 18 — Mi progreso. Ported 1:1 from prototipo/screens-perfil.jsx,
-// wired to real gamification stats + the /api/ai/reframe coach.
-import { useState, useTransition } from "react";
+// Pantalla 18 — Mi progreso. Gamificación por actividad (NO por resultados).
+// La racha se calcula en la zona horaria LOCAL del dispositivo (app multipaís).
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { TopBarSub, Card, IconCircle, Btn, TextArea } from "@/components/netscale/ui";
 import type { Tone } from "@/components/netscale/ui";
 import { Icon, type IconName } from "@/components/netscale/icons";
+import { computeStreakLocal } from "@/lib/streak";
 import { saveLearningAction } from "./actions";
 import { useAiLimitStore } from "@/store/ai-limit-store";
 
-type Earned = { primerContacto: boolean; cincoVideos: boolean; semana: boolean };
+type Earned = { primerContacto: boolean; cincoVideos: boolean };
 
 const FALLBACK_REFRAME =
   "Un “no” no habla de ti, habla de un momento. Cada conversación te hace mejor y más cercano a la persona correcta. Estás siendo constante, y eso es lo que cuenta. ¡Sigue así!";
 
-export function ProgresoScreen({ streakDays, earned }: { streakDays: number; earned: Earned }) {
+export function ProgresoScreen({
+  streakDaysServer,
+  eventDates,
+  earned,
+}: {
+  streakDaysServer: number;
+  eventDates: string[];
+  earned: Earned;
+}) {
   const router = useRouter();
   const [text, setText] = useState("");
   const [reframe, setReframe] = useState<string | null>(null);
   const [pending, start] = useTransition();
 
+  // Racha recalculada con la zona horaria local del dispositivo. Empieza con el
+  // valor del servidor (evita parpadeo/hydration mismatch) y se ajusta tras montar.
+  const [streakDays, setStreakDays] = useState(streakDaysServer);
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setStreakDays(computeStreakLocal(eventDates)));
+    return () => cancelAnimationFrame(id);
+  }, [eventDates]);
+
+  const semana = streakDays >= 7;
   const achievements: { icon: IconName; label: string; earned: boolean; tone: Tone }[] = [
     { icon: "wave", label: "Primer contacto", earned: earned.primerContacto, tone: "orange" },
     { icon: "playLine", label: "5 videos", earned: earned.cincoVideos, tone: "blue" },
-    { icon: "flame", label: "1 semana", earned: earned.semana, tone: earned.semana ? "orange" : "gray" },
+    { icon: "flame", label: "1 semana", earned: semana, tone: semana ? "orange" : "gray" },
   ];
 
   const recibirAnimo = () => {

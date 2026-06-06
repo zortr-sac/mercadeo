@@ -7,6 +7,7 @@ import {
 } from "@/lib/ai/compliance";
 import { generateWithGemini } from "@/lib/ai/gemini";
 import { assertWithinBudget, recordAiUsage } from "@/lib/ai/usage";
+import { logActivity } from "@/lib/activity";
 import { LEGAL_DISCLAIMERS } from "@/lib/constants";
 import { requireSession } from "@/lib/session";
 
@@ -114,6 +115,10 @@ export async function POST(request: Request) {
       idempotencyKey: input.idempotencyKey,
     });
   }
+
+  // Escribir un mensaje cuenta como actividad (racha/constancia), aunque la IA
+  // caiga en el fallback: el usuario igual realizó la acción.
+  await logActivity(user.id, user.businessId, "message_generated");
 
   // Mensaje base: IA real si esta disponible, si no el generador determinista.
   let message =
