@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { checkCompliance, makeSafeAlternative } from "@/lib/ai/compliance";
 import { generateWithGemini } from "@/lib/ai/gemini";
+import { parseInlineImage } from "@/lib/ai/image-input";
 import { assertWithinBudget, recordAiUsage } from "@/lib/ai/usage";
 import { LEGAL_DISCLAIMERS } from "@/lib/constants";
 import { requireSession } from "@/lib/session";
@@ -9,6 +10,9 @@ import { requireSession } from "@/lib/session";
 const requestSchema = z.object({
   idempotencyKey: z.string().min(8),
   topic: z.string().min(3).max(500),
+  /** Imagen de contexto opcional (data URL o base64). */
+  imageBase64: z.string().max(12_000_000).optional(),
+  imageMimeType: z.enum(["image/png", "image/jpeg", "image/webp"]).optional(),
 });
 
 const SYSTEM_PROMPT = `Eres un asistente que crea presentaciones simples y claras para vendedores de productos de bienestar y belleza (network marketing).
@@ -75,16 +79,20 @@ export async function POST(request: Request) {
   if (!parsed.success) {
     return NextResponse.json({ error: "Solicitud invalida" }, { status: 400 });
   }
-  const { topic, idempotencyKey } = parsed.data;
+  const { topic, idempotencyKey, imageBase64, imageMimeType } = parsed.data;
 
   const budget = await assertWithinBudget(user.businessId, user.id);
   if (!budget.ok) {
     return NextResponse.json({ error: "ai_limit" }, { status: 429 });
   }
 
+  const reference = parseInlineImage(imageBase64, imageMimeType);
   const generated = await generateWithGemini({
     system: SYSTEM_PROMPT,
-    prompt: `Tema: "${topic}". Genera el JSON de la presentacion.`,
+    prompt: reference
+      ? `Tema: "${topic}". Considera la imagen adjunta como contexto del producto o tema. Genera el JSON de la presentacion.`
+      : `Tema: "${topic}". Genera el JSON de la presentacion.`,
+    image: reference,
     json: true,
     temperature: 0.6,
     maxOutputTokens: 900,

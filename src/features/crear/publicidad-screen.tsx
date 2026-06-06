@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import { TopBarSub, TextArea, Btn, SectionLabel, AIWorking, Toast, useToast } from "@/components/netscale/ui";
 import { Icon, type IconName } from "@/components/netscale/icons";
 import { shareOrDownloadImage } from "./share";
+import { ImageAttachField } from "./image-attach-field";
+import type { PreparedImage } from "@/features/duplication/image-utils";
 import { useAiLimitStore } from "@/store/ai-limit-store";
 
 const AD_CHIPS = ["Oferta", "Producto nuevo", "Testimonio"];
@@ -24,6 +26,7 @@ export function PublicidadScreen() {
   const [state, setState] = useState<State>("idle");
   const [image, setImage] = useState<string | null>(null);
   const [mime, setMime] = useState("image/png");
+  const [refImage, setRefImage] = useState<PreparedImage | null>(null);
   const [msg, flash] = useToast();
 
   const run = async () => {
@@ -33,7 +36,12 @@ export function PublicidadScreen() {
       const res = await fetch("/api/ai/flyer", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ idempotencyKey: crypto.randomUUID(), description: text.trim(), kind: chip || undefined }),
+        body: JSON.stringify({
+          idempotencyKey: crypto.randomUUID(),
+          description: text.trim(),
+          kind: chip || undefined,
+          ...(refImage ? { imageBase64: refImage.dataUrl, imageMimeType: refImage.mimeType } : {}),
+        }),
       });
       if (res.status === 429) {
         useAiLimitStore.getState().show();
@@ -81,6 +89,12 @@ export function PublicidadScreen() {
         <h2 style={{ fontSize: 22 }}>¿Qué quieres anunciar?</h2>
         <TextArea value={text} onChange={setText} minHeight={90}
           placeholder="Ejemplo: crema facial con descuento esta semana" />
+        <ImageAttachField
+          value={refImage}
+          onChange={setRefImage}
+          label="Agregar foto de referencia (opcional)"
+          hint="Si subes una foto de tu producto, la IA la usará como base del anuncio."
+        />
         <Btn size="xl" icon="sparkles" onClick={run}>Crear anuncio</Btn>
 
         {state === "loading" && <AIWorking label="Diseñando tu anuncio…" />}

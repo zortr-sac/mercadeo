@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import { TopBarSub, TextArea, Btn, SectionLabel, ImagePlaceholder, AIWorking } from "@/components/netscale/ui";
 import { Icon } from "@/components/netscale/icons";
 import { downloadPresentationPdf, sharePresentationPdf, type Slide } from "./pdf";
+import { ImageAttachField } from "./image-attach-field";
+import type { PreparedImage } from "@/features/duplication/image-utils";
 import { useAiLimitStore } from "@/store/ai-limit-store";
 
 type State = "idle" | "loading" | "done";
@@ -16,6 +18,7 @@ export function PresentacionNuevaScreen() {
   const [state, setState] = useState<State>("idle");
   const [title, setTitle] = useState("");
   const [slides, setSlides] = useState<Slide[]>([]);
+  const [refImage, setRefImage] = useState<PreparedImage | null>(null);
 
   const run = async () => {
     if (text.trim().length < 3) return;
@@ -24,7 +27,11 @@ export function PresentacionNuevaScreen() {
       const res = await fetch("/api/ai/presentation", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ idempotencyKey: crypto.randomUUID(), topic: text.trim() }),
+        body: JSON.stringify({
+          idempotencyKey: crypto.randomUUID(),
+          topic: text.trim(),
+          ...(refImage ? { imageBase64: refImage.dataUrl, imageMimeType: refImage.mimeType } : {}),
+        }),
       });
       if (res.status === 429) {
         useAiLimitStore.getState().show();
@@ -53,6 +60,12 @@ export function PresentacionNuevaScreen() {
         <h2 style={{ fontSize: 22 }}>¿De qué quieres hablar?</h2>
         <TextArea value={text} onChange={setText} minHeight={110}
           placeholder="Ejemplo: los beneficios del programa de control de peso" />
+        <ImageAttachField
+          value={refImage}
+          onChange={setRefImage}
+          label="Agregar imagen de contexto (opcional)"
+          hint="La IA considerará la imagen para armar las diapositivas."
+        />
         <Btn size="xl" icon="sparkles" onClick={run}>Crear con IA</Btn>
 
         {state === "loading" && <AIWorking label="Creando tus láminas…" />}

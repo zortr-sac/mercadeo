@@ -119,29 +119,40 @@ export async function generateWithGemini(params: {
   }
 }
 
-interface GeminiImageResult {
-  /** base64 image data (no `data:` prefix). */
-  data: string;
-  mimeType: string;
-  usage: TokenUsage;
-  model: string;
-}
+/**
+ * Resultado discriminado de la generación de imagen: éxito con la imagen, o
+ * fallo con la razón. `quota` = 429 (cuota agotada / sin facturación para el
+ * modelo de imagen); el llamador muestra un mensaje específico.
+ */
+export type ImageGenerationResult =
+  | { ok: true; data: string; mimeType: string; usage: TokenUsage; model: string }
+  | { ok: false; reason: "no_key" | "quota" | "error" };
 
 /**
- * Generates an image with Gemini 2.5 Flash Image ("Nano Banana") via the same
- * generateContent endpoint and API key. Returns the base64 image or `null` if
- * there is no key / the model is unavailable (the caller shows a friendly retry).
+ * Generates an image with Gemini Flash Image ("Nano Banana") via the same
+ * generateContent endpoint and API key. Optionally takes a reference `image`
+ * (base64) to edit/compose on top of it. The model id is configurable via
+ * GEMINI_IMAGE_MODEL.
  */
 export async function generateImageWithGemini(params: {
   prompt: string;
+  /** Imagen de referencia opcional: base64 sin prefijo `data:`, + su mime type. */
+  image?: { data: string; mimeType: string };
   timeoutMs?: number;
-}): Promise<GeminiImageResult | null> {
+}): Promise<ImageGenerationResult> {
   const apiKey = serverEnv.GEMINI_API_KEY;
-  if (!apiKey) return null;
+  if (!apiKey) return { ok: false, reason: "no_key" };
 
-  const model = "gemini-2.5-flash-image";
+  const model = serverEnv.GEMINI_IMAGE_MODEL || "gemini-2.5-flash-image";
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), params.timeoutMs ?? 30_000);
+
+  const parts: Record<string, unknown>[] = [{ text: params.prompt }];
+  if (params.image) {
+    parts.push({
+      inline_data: { mime_type: params.image.mimeType, data: params.image.data },
+    });
+  }
 
   try {
     const response = await fetch(`${ENDPOINT}/${model}:generateContent`, {
@@ -151,7 +162,7 @@ export async function generateImageWithGemini(params: {
         "x-goog-api-key": apiKey,
       },
       body: JSON.stringify({
-        contents: [{ role: "user", parts: [{ text: params.prompt }] }],
+        contents: [{ role: "user", parts }],
         generationConfig: { responseModalities: ["IMAGE"] },
       }),
       signal: controller.signal,
@@ -160,7 +171,7 @@ export async function generateImageWithGemini(params: {
     if (!response.ok) {
       const detail = await response.text().catch(() => "");
       console.warn(`[gemini] image ${response.status}: ${detail.slice(0, 300)}`);
-      return null;
+      return { ok: false, reason: response.status === 429 ? "quota" : "error" };
     }
 
     type InlineData = { mimeType?: string; mime_type?: string; data?: string };
@@ -173,16 +184,22 @@ export async function generateImageWithGemini(params: {
       };
     };
     const usage = readUsage(data.usageMetadata);
-    const parts = data.candidates?.[0]?.content?.parts ?? [];
-    for (const part of parts) {
+    const candidateParts = data.candidates?.[0]?.content?.parts ?? [];
+    for (const part of candidateParts) {
       const inline = part.inlineData ?? part.inline_data;
       if (inline?.data) {
-        return { data: inline.data, mimeType: inline.mimeType ?? inline.mime_type ?? "image/png", usage, model };
+        return {
+          ok: true,
+          data: inline.data,
+          mimeType: inline.mimeType ?? inline.mime_type ?? "image/png",
+          usage,
+          model,
+        };
       }
     }
-    return null;
+    return { ok: false, reason: "error" };
   } catch {
-    return null;
+    return { ok: false, reason: "error" };
   } finally {
     clearTimeout(timeout);
   }
