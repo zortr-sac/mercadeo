@@ -8,10 +8,19 @@ import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
-import type { Profile, SubscriptionState } from "@/data/types";
-import { daysUntilExpiry, getSubscriptionState } from "@/lib/subscription";
+import type { SubscriptionState } from "@/data/types";
 import { ManagerCard, ManagerHeader, ManagerRow } from "./admin-ui";
 import { recordPaymentAction } from "./subscription-actions";
+
+/** Cliente con sus datos de suscripción ya calculados en el servidor. */
+export interface SubscriptionClient {
+  id: string;
+  fullName: string;
+  phone: string | null;
+  avatarUrl: string | null;
+  state: SubscriptionState;
+  expiryLabel: string;
+}
 
 type BadgeVariant = "success" | "gold" | "destructive" | "muted";
 
@@ -22,64 +31,45 @@ const STATE_BADGE: Record<SubscriptionState, { label: string; variant: BadgeVari
   none: { label: "Sin suscripción", variant: "muted" },
 };
 
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("es-PE", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
-}
-
-/** Texto humano del vencimiento, relativo a hoy. */
-function expiryText(expiresAt: string | null): string {
-  if (!expiresAt) return "Sin fecha de vencimiento asignada";
-  const days = daysUntilExpiry(expiresAt);
-  const date = formatDate(expiresAt);
-  if (days < 0) return `Venció el ${date} · hace ${Math.abs(days)} día(s)`;
-  if (days === 0) return `Vence hoy · ${date}`;
-  if (days === 1) return `Vence mañana · ${date}`;
-  return `Vence en ${days} días · ${date}`;
-}
-
 /**
- * Panel de suscripciones por negocio (solo admin de plataforma). Muestra a cada
- * cliente con su estado y permite registrar el pago del mes ("sin perder días").
+ * Panel de suscripciones por negocio (solo admin de plataforma). Recibe los
+ * clientes ya ordenados y con su estado/etiqueta calculados en el servidor, y
+ * permite registrar el pago del mes ("sin perder días").
  */
 export function SubscriptionManager({
   businessId,
-  members,
+  clients,
 }: {
   businessId: string;
-  members: Profile[];
+  clients: SubscriptionClient[];
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [actingId, setActingId] = useState<string | null>(null);
 
-  // Vencidos primero, luego los más próximos a vencer (null = al final).
-  const sorted = [...members].sort(
-    (a, b) =>
-      daysUntilExpiry(a.subscriptionExpiresAt) - daysUntilExpiry(b.subscriptionExpiresAt),
-  );
-
-  const counts = members.reduce(
-    (acc, member) => {
-      const state = getSubscriptionState(member.subscriptionExpiresAt);
-      if (state === "expired") acc.expired += 1;
-      else if (state === "expiring_soon") acc.expiringSoon += 1;
-      else if (state === "active") acc.active += 1;
+  const counts = clients.reduce(
+    (acc, client) => {
+      if (client.state === "expired") acc.expired += 1;
+      else if (client.state === "expiring_soon") acc.expiringSoon += 1;
+      else if (client.state === "active") acc.active += 1;
       return acc;
     },
     { expired: 0, expiringSoon: 0, active: 0 },
   );
 
-  function registerPayment(member: Profile) {
-    if (!window.confirm(`¿Registrar el pago del mes de ${member.fullName}?`)) return;
-    setActingId(member.id);
+  function registerPayment(client: SubscriptionClient) {
+    if (!window.confirm(`¿Registrar el pago del mes de ${client.fullName}?`)) return;
+    setActingId(client.id);
     startTransition(async () => {
       try {
-        const res = await recordPaymentAction(businessId, member.id);
-        toast.success(`Pago registrado. Nuevo vencimiento: ${formatDate(res.expiresAt)}.`);
+        const res = await recordPaymentAction(businessId, client.id);
+        const date = new Date(res.expiresAt).toLocaleDateString("es-PE", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+          timeZone: "America/Lima",
+        });
+        toast.success(`Pago registrado. Nuevo vencimiento: ${date}.`);
         router.refresh();
       } catch (error) {
         toast.error(
@@ -105,7 +95,7 @@ export function SubscriptionManager({
         <Badge variant="success">{counts.active} al día</Badge>
       </div>
 
-      {sorted.length === 0 ? (
+      {clients.length === 0 ? (
         <EmptyState
           icon={Wallet}
           title="Aún no hay clientes"
@@ -113,33 +103,29 @@ export function SubscriptionManager({
         />
       ) : (
         <div className="space-y-3">
-          {sorted.map((member) => {
-            const state = getSubscriptionState(member.subscriptionExpiresAt);
-            const badge = STATE_BADGE[state];
-            const acting = pending && actingId === member.id;
+          {clients.map((client) => {
+            const badge = STATE_BADGE[client.state];
+            const acting = pending && actingId === client.id;
             return (
-              <ManagerRow key={member.id}>
-                <Avatar name={member.fullName} src={member.avatarUrl} size="md" />
+              <ManagerRow key={client.id}>
+                <Avatar name={client.fullName} src={client.avatarUrl} size="md" />
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <p className="truncate font-semibold">{member.fullName}</p>
+                    <p className="truncate font-semibold">{client.fullName}</p>
                     <Badge variant={badge.variant}>{badge.label}</Badge>
                   </div>
                   <p className="truncate text-sm text-muted-foreground">
-                    {member.phone || member.email}
+                    {client.phone || "Sin teléfono"}
                   </p>
-                  <p className="mt-0.5 text-sm text-muted-foreground">
-                    {expiryText(member.subscriptionExpiresAt)}
-                  </p>
+                  <p className="mt-0.5 text-sm text-muted-foreground">{client.expiryLabel}</p>
                 </div>
-
                 <div className="flex shrink-0">
                   <Button
                     variant="secondary"
                     size="sm"
                     loading={acting}
                     disabled={pending}
-                    onClick={() => registerPayment(member)}
+                    onClick={() => registerPayment(client)}
                   >
                     <CheckCircle2 className="size-4" aria-hidden />
                     Registrar pago

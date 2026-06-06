@@ -36,6 +36,26 @@ export function getSubscriptionState(
 }
 
 /**
+ * Etiqueta humana del vencimiento, en hora de Perú. La zona horaria se fija para
+ * que el texto sea idéntico en el servidor (UTC) y en el cliente, evitando el
+ * desajuste de hidratación (React #418). Calcúlala en el server y pásala como prop.
+ */
+export function formatExpiryLabel(expiresAt: string | null, now: Date = new Date()): string {
+  if (!expiresAt) return "Sin fecha de vencimiento asignada";
+  const days = daysUntilExpiry(expiresAt, now);
+  const date = new Date(expiresAt).toLocaleDateString("es-PE", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    timeZone: "America/Lima",
+  });
+  if (days < 0) return `Venció el ${date} · hace ${Math.abs(days)} día(s)`;
+  if (days === 0) return `Vence hoy · ${date}`;
+  if (days === 1) return `Vence mañana · ${date}`;
+  return `Vence en ${days} días · ${date}`;
+}
+
+/**
  * Nueva fecha de vencimiento tras registrar un pago, SIN perder días:
  * - si la suscripción sigue vigente (vence en el futuro), suma el período sobre ESA
  *   fecha (el cliente no pierde los días que aún le quedaban);
