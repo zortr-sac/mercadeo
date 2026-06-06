@@ -1,18 +1,17 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Globe2, Palette, Save, Sparkles } from "lucide-react";
+import { Globe2, Palette, Save } from "lucide-react";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Field, Input, Textarea } from "@/components/ui/field";
+import { Field, Input } from "@/components/ui/field";
 import type { Business } from "@/data/types";
 import { ManagerCard, ManagerHeader, NoticePanel } from "./admin-ui";
 import { ColorPalettePicker } from "./color-palette-picker";
 import {
   updateBusinessBrandingAction,
   updateBusinessDomainAction,
-  updateBusinessPromptsAction,
 } from "./business-actions";
 
 /** Ajustes del negocio: color de marca (editable) y dominio propio. */
@@ -22,29 +21,8 @@ export function SettingsManager({ business }: { business: Business }) {
   const [color, setColor] = useState(business.primaryColor);
   const [savingDomain, startDomain] = useTransition();
   const [savingColor, startColor] = useTransition();
-  const [flyerPrompt, setFlyerPrompt] = useState(business.flyerPrompt ?? "");
-  const [presentationPrompt, setPresentationPrompt] = useState(
-    business.presentationPrompt ?? "",
-  );
-  const [savingPrompts, startPrompts] = useTransition();
 
   const colorChanged = color.toLowerCase() !== business.primaryColor.toLowerCase();
-
-  function savePrompts() {
-    startPrompts(async () => {
-      const res = await updateBusinessPromptsAction(
-        business.id,
-        flyerPrompt,
-        presentationPrompt,
-      );
-      if (res && res.ok === false) {
-        toast.error(res.error ?? "No se pudieron guardar las instrucciones.");
-        return;
-      }
-      toast.success("Instrucciones de IA guardadas.");
-      router.refresh();
-    });
-  }
 
   function saveColor() {
     startColor(async () => {
@@ -115,48 +93,6 @@ export function SettingsManager({ business }: { business: Business }) {
           En producción, este dominio debe apuntar al servidor de la plataforma
           para resolver el negocio por su dirección web.
         </NoticePanel>
-      </ManagerCard>
-
-      <ManagerCard>
-        <ManagerHeader
-          icon={Sparkles}
-          title="Instrucciones para la IA"
-          description="Directrices fijas que la IA seguirá al crear anuncios y presentaciones de tu negocio. Se suman a las reglas del sistema (que siempre cuidan el cumplimiento legal)."
-        />
-        <div className="space-y-4">
-          <Field
-            label="Anuncios (flyers)"
-            htmlFor="flyer-prompt"
-            hint="Ej. Usa tonos cálidos y el nombre de la marca; estilo limpio; sin texto recargado."
-          >
-            <Textarea
-              id="flyer-prompt"
-              value={flyerPrompt}
-              onChange={(event) => setFlyerPrompt(event.target.value)}
-              rows={4}
-              className="min-h-28 text-lg leading-relaxed"
-              placeholder="Instrucciones para los anuncios de tu negocio…"
-            />
-          </Field>
-          <Field
-            label="Presentaciones"
-            htmlFor="presentation-prompt"
-            hint="Ej. Enfócate en los beneficios del producto; lenguaje sencillo; cierra con una invitación amable."
-          >
-            <Textarea
-              id="presentation-prompt"
-              value={presentationPrompt}
-              onChange={(event) => setPresentationPrompt(event.target.value)}
-              rows={4}
-              className="min-h-28 text-lg leading-relaxed"
-              placeholder="Instrucciones para las presentaciones de tu negocio…"
-            />
-          </Field>
-          <Button onClick={savePrompts} loading={savingPrompts}>
-            <Save className="size-5" aria-hidden />
-            Guardar instrucciones
-          </Button>
-        </div>
       </ManagerCard>
     </div>
   );

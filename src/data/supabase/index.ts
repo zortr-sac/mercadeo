@@ -9,7 +9,10 @@ import type {
   NewPresentationTemplateInput,
   PresentationTemplatePatch,
   PresentationTemplateRepository,
-  UsageRepository,
+  NewAdTemplateInput,
+  AdTemplatePatch,
+  AdTemplateRepository,
+  ReactionRepository,
   BusinessRepository,
   CoursePatch,
   DuplicationRepository,
@@ -50,6 +53,7 @@ import type {
   MessageTemplate,
   Playbook,
   PresentationTemplate,
+  AdTemplate,
   Profile,
   Prospect,
   ProspectInteraction,
@@ -73,8 +77,6 @@ function mapBusiness(row: any): Business {
     logoUrl: row.logo_path ?? null,
     primaryColor: row.primary_color,
     accentColor: row.accent_color,
-    flyerPrompt: row.flyer_prompt ?? "",
-    presentationPrompt: row.presentation_prompt ?? "",
     customDomain: row.custom_domain ?? null,
     registrationPath: `/registro/${row.slug}`,
     subscriptionPricePen: row.subscription_price_pen,
@@ -247,6 +249,22 @@ function mapPresentationTemplate(row: any): PresentationTemplate {
     filePath: row.file_path ?? null,
     fileName: row.file_name ?? null,
     fileBytes: Number(row.file_bytes ?? 0),
+    slides: Array.isArray(row.slides) ? row.slides : [],
+    isPublished: row.is_published ?? false,
+    sortOrder: row.sort_order ?? 0,
+    createdAt: row.created_at,
+  };
+}
+
+function mapAdTemplate(row: any): AdTemplate {
+  return {
+    id: row.id,
+    businessId: row.business_id ?? null,
+    title: row.title,
+    bodyText: row.body_text ?? "",
+    imageUrl: row.image_url ?? null,
+    imagePath: row.image_path ?? null,
+    category: row.category ?? "General",
     isPublished: row.is_published ?? false,
     sortOrder: row.sort_order ?? 0,
     createdAt: row.created_at,
@@ -497,19 +515,6 @@ const businesses: BusinessRepository = {
       .update({
         primary_color: primaryColor,
         accent_color: accentColor,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", id);
-    if (error) throw error;
-  },
-  async updatePrompts(id, flyerPrompt, presentationPrompt) {
-    // Service-role: misma razón que updateBranding (RLS no expone UPDATE de businesses).
-    const admin = createAdminClient();
-    const { error } = await admin
-      .from("businesses")
-      .update({
-        flyer_prompt: flyerPrompt,
-        presentation_prompt: presentationPrompt,
         updated_at: new Date().toISOString(),
       })
       .eq("id", id);
@@ -1198,49 +1203,133 @@ const audiobooks: AudiobookRepository = {
   },
 };
 
-const usage: UsageRepository = {
-  async listForWindow(businessId, sinceISO) {
+const adTemplates: AdTemplateRepository = {
+  async list(filter) {
+    const supabase = await db();
+    let query = supabase.from("ad_templates").select("*").eq("is_published", true);
+    if (filter && "businessId" in filter) query = scopeBusiness(query, filter.businessId);
+    const { data, error } = await query.order("sort_order", { ascending: true });
+    if (error) throw error;
+    return (data ?? []).map(mapAdTemplate);
+  },
+  async listAdmin(businessId) {
     const supabase = await db();
     const { data, error } = await supabase
-      .from("ai_usage")
-      .select("user_id, endpoint, cost_pen, created_at")
+      .from("ad_templates")
+      .select("*")
       .eq("business_id", businessId)
-      .gte("created_at", sinceISO)
-      .order("created_at", { ascending: true });
+      .order("sort_order", { ascending: true });
     if (error) throw error;
-    return (data ?? []).map((r) => ({
-      userId: r.user_id as string,
-      endpoint: (r.endpoint as string) ?? "message",
-      costPen: Number(r.cost_pen ?? 0),
-      createdAt: r.created_at as string,
-    }));
+    return (data ?? []).map(mapAdTemplate);
   },
-  async overridesForMonth(businessId, monthKey) {
+  async getById(id) {
+    const supabase = await db();
+    const { data } = await supabase.from("ad_templates").select("*").eq("id", id).maybeSingle();
+    return data ? mapAdTemplate(data) : null;
+  },
+  async create(input: NewAdTemplateInput) {
+    const supabase = await db();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    const { data, error } = await supabase
+      .from("ad_templates")
+      .insert({
+        business_id: input.businessId,
+        title: input.title.trim(),
+        body_text: input.bodyText.trim(),
+        category: input.category.trim() || "General",
+        image_url: input.imageUrl ?? null,
+        image_path: input.imagePath ?? null,
+        is_published: input.isPublished ?? false,
+        sort_order: input.sortOrder ?? 0,
+        created_by: user?.id ?? null,
+      })
+      .select("*")
+      .single();
+    if (error) throw error;
+    return mapAdTemplate(data);
+  },
+  async update(id, patch: AdTemplatePatch) {
+    const supabase = await db();
+    const row: Record<string, unknown> = { updated_at: new Date().toISOString() };
+    if (patch.title !== undefined) row.title = patch.title;
+    if (patch.bodyText !== undefined) row.body_text = patch.bodyText;
+    if (patch.category !== undefined) row.category = patch.category;
+    if (patch.imageUrl !== undefined) row.image_url = patch.imageUrl;
+    if (patch.imagePath !== undefined) row.image_path = patch.imagePath;
+    if (patch.isPublished !== undefined) row.is_published = patch.isPublished;
+    if (patch.sortOrder !== undefined) row.sort_order = patch.sortOrder;
+    const { data, error } = await supabase
+      .from("ad_templates")
+      .update(row)
+      .eq("id", id)
+      .select("*")
+      .single();
+    if (error) throw error;
+    return mapAdTemplate(data);
+  },
+  async remove(id) {
+    const supabase = await db();
+    const { error } = await supabase.from("ad_templates").delete().eq("id", id);
+    if (error) throw error;
+  },
+};
+
+const reactions: ReactionRepository = {
+  async toggle(userId, businessId, type, contentId) {
+    const supabase = await db();
+    const { data: existing } = await supabase
+      .from("content_reactions")
+      .select("content_id")
+      .eq("user_id", userId)
+      .eq("content_type", type)
+      .eq("content_id", contentId)
+      .maybeSingle();
+    if (existing) {
+      const { error } = await supabase
+        .from("content_reactions")
+        .delete()
+        .eq("user_id", userId)
+        .eq("content_type", type)
+        .eq("content_id", contentId);
+      if (error) throw error;
+      return { reacted: false };
+    }
+    const { error } = await supabase.from("content_reactions").insert({
+      user_id: userId,
+      business_id: businessId,
+      content_type: type,
+      content_id: contentId,
+    });
+    if (error) throw error;
+    return { reacted: true };
+  },
+  async listReactedIds(userId, type) {
     const supabase = await db();
     const { data, error } = await supabase
-      .from("ai_limit_overrides")
-      .select("user_id, limit_pen")
-      .eq("business_id", businessId)
-      .eq("year_month", monthKey);
+      .from("content_reactions")
+      .select("content_id")
+      .eq("user_id", userId)
+      .eq("content_type", type);
     if (error) throw error;
-    const map: Record<string, number> = {};
-    for (const r of data ?? []) map[r.user_id as string] = Number(r.limit_pen ?? 0);
-    return map;
+    return (data ?? []).map((r) => r.content_id as string);
   },
-  async setLimitOverride({ businessId, userId, monthKey, limitPen, updatedBy }) {
-    const supabase = await db();
-    const { error } = await supabase.from("ai_limit_overrides").upsert(
-      {
-        business_id: businessId,
-        user_id: userId,
-        year_month: monthKey,
-        limit_pen: limitPen,
-        updated_by: updatedBy,
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: "business_id,user_id,year_month" },
-    );
+  async getCounts(type, businessId) {
+    const admin = createAdminClient();
+    let query = admin
+      .from("content_reactions")
+      .select("content_id")
+      .eq("content_type", type);
+    if (businessId) query = query.eq("business_id", businessId);
+    const { data, error } = await query;
     if (error) throw error;
+    const counts: Record<string, number> = {};
+    for (const r of data ?? []) {
+      const id = (r as { content_id: string }).content_id;
+      counts[id] = (counts[id] ?? 0) + 1;
+    }
+    return counts;
   },
 };
 
@@ -1364,6 +1453,7 @@ const presentationTemplates: PresentationTemplateRepository = {
         file_path: input.filePath ?? null,
         file_name: input.fileName ?? null,
         file_bytes: input.fileBytes ?? 0,
+        slides: input.slides ?? [],
         is_published: input.isPublished ?? false,
         sort_order: input.sortOrder ?? 0,
         created_by: user?.id ?? null,
@@ -1383,6 +1473,7 @@ const presentationTemplates: PresentationTemplateRepository = {
     if (patch.filePath !== undefined) row.file_path = patch.filePath;
     if (patch.fileName !== undefined) row.file_name = patch.fileName;
     if (patch.fileBytes !== undefined) row.file_bytes = patch.fileBytes;
+    if (patch.slides !== undefined) row.slides = patch.slides;
     if (patch.isPublished !== undefined) row.is_published = patch.isPublished;
     if (patch.sortOrder !== undefined) row.sort_order = patch.sortOrder;
     const { data, error } = await supabase
@@ -1408,10 +1499,11 @@ export const supabaseRepositories: Repositories = {
   duplication,
   audiobooks,
   presentationTemplates,
+  adTemplates,
+  reactions,
   prospects,
   interactions,
   learnings,
   activity,
-  usage,
   subscriptions,
 };

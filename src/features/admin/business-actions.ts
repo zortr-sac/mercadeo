@@ -49,26 +49,6 @@ export async function updateBusinessBrandingAction(
   }
 }
 
-/** Instrucciones base de IA por negocio (anuncios y presentaciones). Admin o líder del negocio. */
-export async function updateBusinessPromptsAction(
-  businessId: string,
-  flyerPrompt: string,
-  presentationPrompt: string,
-): Promise<{ ok: boolean; error?: string }> {
-  await requireBusinessAdmin(businessId);
-  try {
-    await getRepositories().businesses.updatePrompts(
-      businessId,
-      flyerPrompt.slice(0, 2000),
-      presentationPrompt.slice(0, 2000),
-    );
-    revalidatePath(ROUTES.admin);
-    return { ok: true };
-  } catch {
-    return { ok: false, error: "No se pudieron guardar las instrucciones." };
-  }
-}
-
 /** Publica contenido para un negocio (admin de plataforma o de negocio). */
 export async function createBusinessContentAction(
   input: NewBusinessContentInput,

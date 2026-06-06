@@ -5,7 +5,7 @@ export const APP = {
   fullName: "NetScale",
   shortName: "NetScale",
   description:
-    "Tu negocio, paso a paso. Formacion, herramientas e IA para vendedores de red de mercadeo.",
+    "Tu negocio, paso a paso. Formación, plantillas y herramientas para vendedores de red de mercadeo.",
   themeColor: "#1D4ED8",
 } as const;
 
@@ -40,13 +40,10 @@ export const ROUTES = {
   bienvenida: "/bienvenida",
   login: "/login",
   academia: "/academia",
-  crear: "/crear",
   vender: "/vender",
+  presentar: "/presentar",
   audiolibros: "/audiolibros",
   descargados: "/descargados",
-  duplicacion: "/duplicacion",
-  prospectos: "/vender/prospectos",
-  mensajes: "/vender/mensajes",
   constancia: "/constancia",
   progreso: "/progreso",
   perfil: "/perfil",
@@ -61,10 +58,9 @@ export const ADMIN_TABS = [
   "resumen",
   "academia",
   "audiolibros",
+  "anuncios",
   "presentaciones",
-  "mensajes",
   "lideres",
-  "consumo",
   "suscripciones",
   "ajustes",
 ] as const;
@@ -75,10 +71,9 @@ export const ADMIN_TAB_LABELS: Record<AdminTab, string> = {
   resumen: "Resumen",
   academia: "Academia",
   audiolibros: "Audiolibros",
+  anuncios: "Anuncios",
   presentaciones: "Presentaciones",
-  mensajes: "Mensajes",
   lideres: "Líderes",
-  consumo: "Consumo",
   suscripciones: "Suscripciones",
   ajustes: "Ajustes",
 };
@@ -121,11 +116,10 @@ export const RESERVED_ROOT_SEGMENTS = new Set([
   "privacidad",
   "suspendido",
   "academia",
-  "crear",
   "vender",
+  "presentar",
   "audiolibros",
   "descargados",
-  "duplicacion",
   "constancia",
   "progreso",
   "perfil",
@@ -176,11 +170,7 @@ export const SUBSCRIPTION = {
 
 export const LEGAL_DISCLAIMERS = {
   sales:
-    "NetScale es una plataforma de formacion y herramientas. No es una oportunidad de negocio, inversion ni programa de afiliacion. No garantiza ingresos ni resultados economicos.",
+    "NetScale es una plataforma de formación y herramientas. No es una oportunidad de negocio, inversión ni programa de afiliación. No garantiza ingresos ni resultados económicos.",
   signup:
-    "Al crear mi cuenta acepto los Terminos y la Politica de Privacidad. Entiendo que la plataforma no garantiza ingresos y que soy responsable del uso que haga de sus herramientas.",
-  ai:
-    "Este contenido fue generado con ayuda de IA como sugerencia. Revisalo antes de enviarlo. No lo uses para prometer ingresos, garantizar ganancias ni captar personas con ofertas basadas en reclutamiento.",
-  compliance:
-    "Detectamos una frase que podria interpretarse como promesa de ingresos o garantia de resultados. Te sugerimos una alternativa mas segura.",
+    "Al crear mi cuenta acepto los Términos y la Política de Privacidad. Entiendo que la plataforma no garantiza ingresos y que soy responsable del uso que haga de sus herramientas.",
 } as const;

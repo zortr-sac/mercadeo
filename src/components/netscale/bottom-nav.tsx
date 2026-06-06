@@ -11,8 +11,8 @@ type NavItem = { id: string; label: string; icon: IconName; href: string; match:
 const NAV_ITEMS: NavItem[] = [
   { id: "home", label: "Inicio", icon: "home", href: ROUTES.home, match: (p) => p === "/" },
   { id: "academia", label: "Academia", icon: "cap", href: ROUTES.academia, match: (p) => p.startsWith("/academia") },
-  { id: "crear", label: "Crear", icon: "sparkles", href: ROUTES.crear, match: (p) => p.startsWith("/crear") },
-  { id: "vender", label: "Vender", icon: "chat", href: ROUTES.vender, match: (p) => p.startsWith("/vender") },
+  { id: "vender", label: "Vender", icon: "megaphone", href: ROUTES.vender, match: (p) => p.startsWith("/vender") },
+  { id: "presentar", label: "Presentar", icon: "slides", href: ROUTES.presentar, match: (p) => p.startsWith("/presentar") },
   {
     id: "perfil", label: "Perfil", icon: "user", href: ROUTES.perfil,
     match: (p) => p.startsWith("/perfil") || p.startsWith("/progreso") || p.startsWith("/audiolibros"),

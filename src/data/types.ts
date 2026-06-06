@@ -12,10 +12,6 @@ export interface Business {
   logoUrl: string | null;
   primaryColor: string;
   accentColor: string;
-  /** Instrucciones del admin que se SUMAN al prompt base de la IA al crear anuncios. */
-  flyerPrompt: string;
-  /** Instrucciones del admin que se SUMAN al prompt base de la IA al crear presentaciones. */
-  presentationPrompt: string;
   customDomain: string | null;
   registrationPath: string;
   subscriptionPricePen: number;
@@ -281,6 +277,12 @@ export interface Audiobook {
 
 /* ===================== Plantillas de presentación ===================== */
 
+/** Imagen de una diapositiva, para visualizar la presentación dentro de la app. */
+export interface PresentationSlide {
+  url: string;
+  path: string;
+}
+
 export interface PresentationTemplate {
   id: string;
   businessId: string | null;
@@ -292,10 +294,33 @@ export interface PresentationTemplate {
   filePath: string | null;
   fileName: string | null;
   fileBytes: number;
+  /** Imágenes de cada diapositiva, en orden (para el visor). */
+  slides: PresentationSlide[];
   isPublished: boolean;
   sortOrder: number;
   createdAt: string;
 }
+
+/* ===================== Anuncios de producto ===================== */
+
+/** Anuncio que el admin sube: imagen + texto + categoría. El cliente copia/descarga/comparte. */
+export interface AdTemplate {
+  id: string;
+  businessId: string | null;
+  title: string;
+  bodyText: string;
+  imageUrl: string | null;
+  imagePath: string | null;
+  category: string;
+  isPublished: boolean;
+  sortOrder: number;
+  createdAt: string;
+}
+
+/* ===================== Reacciones (corazón) ===================== */
+
+/** Tipo de contenido sobre el que un usuario puede reaccionar. */
+export type ContentReactionType = "ad" | "presentation" | "audiobook" | "course";
 
 /* ============================ Prospectos (CRM simple) ============================ */
 

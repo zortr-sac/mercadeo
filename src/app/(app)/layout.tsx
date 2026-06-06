@@ -2,7 +2,6 @@ import { redirect } from "next/navigation";
 import { SessionProvider } from "@/components/session-provider";
 import { InstallPrompt } from "@/components/pwa/install-prompt";
 import { OfflineBootstrap } from "@/components/offline/offline-bootstrap";
-import { AiLimitModal } from "@/features/ai/ai-limit-modal";
 import { NetScaleShell } from "@/components/netscale/shell";
 import { PreviewBar } from "@/components/netscale/preview-bar";
 import { getRepositories } from "@/data";
@@ -49,7 +48,6 @@ export default async function AppLayout({
       </NetScaleShell>
       <InstallPrompt />
       <OfflineBootstrap />
-      <AiLimitModal />
     </SessionProvider>
   );
 }

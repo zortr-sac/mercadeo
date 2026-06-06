@@ -1,42 +1,39 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Eye, EyeOff, FileText, Heart, Pencil, Plus, Presentation } from "lucide-react";
+import { Eye, EyeOff, Heart, ImageIcon, Megaphone, Pencil, Plus } from "lucide-react";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
-import type { PresentationTemplate } from "@/data/types";
-import { formatBytes } from "@/lib/media";
+import type { AdTemplate } from "@/data/types";
 import { ManagerCard, ManagerHeader, ManagerRow } from "./admin-ui";
-import { PresentationTemplateForm } from "./presentation-template-form";
-import { updatePresentationTemplateAction } from "./presentation-template-actions";
+import { AdTemplateForm } from "./ad-template-form";
+import { updateAdTemplateAction } from "./ad-template-actions";
 
-/** Gestión de plantillas de presentación del negocio (subir PPT/PDF, publicar, editar). */
-export function PresentationTemplateManager({
+/** Gestión de anuncios del negocio (subir imagen+texto, categoría, publicar, editar). */
+export function AdTemplateManager({
   businessId,
   templates,
   counts,
 }: {
   businessId: string;
-  templates: PresentationTemplate[];
+  templates: AdTemplate[];
   counts: Record<string, number>;
 }) {
   const router = useRouter();
   const [creating, setCreating] = useState(false);
-  const [editing, setEditing] = useState<PresentationTemplate | null>(null);
+  const [editing, setEditing] = useState<AdTemplate | null>(null);
   const [pending, startTransition] = useTransition();
   const [togglingId, setTogglingId] = useState<string | null>(null);
 
-  function togglePublish(t: PresentationTemplate) {
+  function togglePublish(t: AdTemplate) {
     setTogglingId(t.id);
     startTransition(async () => {
       try {
-        await updatePresentationTemplateAction(businessId, t.id, {
-          isPublished: !t.isPublished,
-        });
-        toast.success(t.isPublished ? "Plantilla oculta." : "Plantilla publicada.");
+        await updateAdTemplateAction(businessId, t.id, { isPublished: !t.isPublished });
+        toast.success(t.isPublished ? "Anuncio oculto." : "Anuncio publicado.");
         router.refresh();
       } catch {
         toast.error("No se pudo cambiar el estado.");
@@ -49,26 +46,26 @@ export function PresentationTemplateManager({
   return (
     <ManagerCard>
       <ManagerHeader
-        icon={Presentation}
-        title="Presentaciones (plantillas)"
-        description="Sube las diapositivas e (opcionalmente) el archivo para la pestaña Presentar. El corazón indica cuántos clientes marcaron cada una como favorita."
+        icon={Megaphone}
+        title="Anuncios"
+        description="Sube anuncios (imagen + texto) para que tus clientes los copien y compartan desde la pestaña Vender. El corazón indica cuántos clientes marcaron cada anuncio como favorito."
         action={
           <Button onClick={() => setCreating(true)}>
             <Plus className="size-5" aria-hidden />
-            Nueva plantilla
+            Nuevo anuncio
           </Button>
         }
       />
 
       {templates.length === 0 ? (
         <EmptyState
-          icon={Presentation}
-          title="Sin plantillas todavía"
-          description="Sube tu primera presentación (PPT o PDF) para que tus clientes la usen."
+          icon={Megaphone}
+          title="Sin anuncios todavía"
+          description="Sube tu primer anuncio para que tus clientes lo compartan en sus redes."
           action={
             <Button onClick={() => setCreating(true)}>
               <Plus className="size-5" aria-hidden />
-              Subir plantilla
+              Subir anuncio
             </Button>
           }
         />
@@ -76,16 +73,16 @@ export function PresentationTemplateManager({
         <div className="space-y-3">
           {templates.map((t) => (
             <ManagerRow key={t.id}>
-              {t.coverUrl ? (
+              {t.imageUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
-                  src={t.coverUrl}
+                  src={t.imageUrl}
                   alt=""
                   className="size-14 shrink-0 rounded-[var(--radius-md)] object-cover"
                 />
               ) : (
                 <span className="flex size-14 shrink-0 items-center justify-center rounded-[var(--radius-md)] bg-muted text-muted-foreground">
-                  <FileText className="size-6" aria-hidden />
+                  <ImageIcon className="size-6" aria-hidden />
                 </span>
               )}
               <div className="min-w-0 flex-1">
@@ -98,12 +95,7 @@ export function PresentationTemplateManager({
                   </Badge>
                 </div>
                 <p className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-sm text-muted-foreground">
-                  <span className="truncate">
-                    {t.slides.length > 0
-                      ? `${t.slides.length} diapositiva${t.slides.length === 1 ? "" : "s"}`
-                      : t.fileName || "archivo"}
-                    {t.fileBytes ? ` · ${formatBytes(t.fileBytes)}` : ""}
-                  </span>
+                  <span className="truncate">{t.category || "General"}</span>
                   <span className="inline-flex items-center gap-1">
                     <Heart className="size-4 text-rose-500" aria-hidden />
                     {counts[t.id] ?? 0}
@@ -146,10 +138,10 @@ export function PresentationTemplateManager({
       )}
 
       {creating && (
-        <PresentationTemplateForm businessId={businessId} onClose={() => setCreating(false)} />
+        <AdTemplateForm businessId={businessId} onClose={() => setCreating(false)} />
       )}
       {editing && (
-        <PresentationTemplateForm
+        <AdTemplateForm
           businessId={businessId}
           template={editing}
           onClose={() => setEditing(null)}

@@ -98,9 +98,9 @@ export function PushNotificationManager({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          title: "Seguimiento pendiente",
-          body: "Hoy te toca escribirle a un prospecto.",
-          url: "/duplicacion/prospectos",
+          title: "Contenido nuevo",
+          body: "Tienes anuncios y presentaciones listos para compartir.",
+          url: "/vender",
         }),
       }).catch(() => null);
 
@@ -111,10 +111,10 @@ export function PushNotificationManager({
 
       // Respaldo local si el envio por servidor no llega.
       const registration = await navigator.serviceWorker.ready;
-      await registration.showNotification("Seguimiento pendiente", {
-        body: "Ejemplo: hoy toca escribirle a un prospecto.",
+      await registration.showNotification("Contenido nuevo", {
+        body: "Tienes anuncios y presentaciones listos para compartir.",
         icon: "/icons/icon-192.png",
-        data: { url: "/duplicacion/prospectos" },
+        data: { url: "/vender" },
       });
       toast.success("Notificacion de prueba mostrada.");
     });

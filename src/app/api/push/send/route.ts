@@ -5,9 +5,9 @@ import { requireSession } from "@/lib/session";
 import { sendPushToUser } from "@/lib/push/send";
 
 const requestSchema = z.object({
-  title: z.string().max(80).default("Seguimiento pendiente"),
-  body: z.string().max(200).default("Hoy te toca escribirle a un prospecto."),
-  url: z.string().max(200).default("/duplicacion/prospectos"),
+  title: z.string().max(80).default("Contenido nuevo"),
+  body: z.string().max(200).default("Tienes contenido nuevo en NetScale."),
+  url: z.string().max(200).default("/vender"),
 });
 
 export async function POST(request: Request) {

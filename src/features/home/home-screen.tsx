@@ -8,8 +8,8 @@ import { ROUTES } from "@/lib/constants";
 
 const SHORTCUTS: { icon: IconName; tone: Tone; label: string; href: string }[] = [
   { icon: "cap", tone: "blue", label: "Aprender", href: ROUTES.academia },
-  { icon: "sparkles", tone: "orange", label: "Crear", href: ROUTES.crear },
-  { icon: "chat", tone: "blue", label: "Vender", href: ROUTES.vender },
+  { icon: "megaphone", tone: "orange", label: "Vender", href: ROUTES.vender },
+  { icon: "slides", tone: "blue", label: "Presentar", href: ROUTES.presentar },
   { icon: "trophy", tone: "orange", label: "Mi progreso", href: ROUTES.progreso },
 ];
 
@@ -34,9 +34,9 @@ export function HomeScreen({ firstName, avatar }: { firstName: string; avatar: s
             </span>
           </div>
           <p style={{ fontSize: 20, fontWeight: 600, lineHeight: 1.35, marginBottom: 16 }}>
-            Escríbele a un contacto nuevo hoy
+            Comparte un anuncio con tus contactos hoy
           </p>
-          <Btn size="md" iconRight="chevR" onClick={() => router.push(`${ROUTES.vender}/mensajes`)}>Empezar</Btn>
+          <Btn size="md" iconRight="chevR" onClick={() => router.push(ROUTES.vender)}>Ver anuncios</Btn>
         </Card>
 
         {/* ¿Qué quieres hacer? */}

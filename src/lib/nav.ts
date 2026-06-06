@@ -3,9 +3,9 @@ import {
   GraduationCap,
   Headphones,
   Home,
-  MessageCircle,
+  Megaphone,
+  Presentation,
   ShieldCheck,
-  Users,
   type LucideIcon,
 } from "lucide-react";
 import { ROUTES } from "./constants";
@@ -21,22 +21,22 @@ export interface NavItem {
 export const NAV_ITEMS: NavItem[] = [
   { label: "Inicio", href: ROUTES.home, icon: Home, match: "/" },
   {
-    label: "Mensajes",
-    href: ROUTES.mensajes,
-    icon: MessageCircle,
-    match: "/mensajes",
-  },
-  {
-    label: "Prospectos",
-    href: ROUTES.prospectos,
-    icon: Users,
-    match: "/duplicacion/prospectos",
-  },
-  {
     label: "Academia",
     href: ROUTES.academia,
     icon: GraduationCap,
     match: "/academia",
+  },
+  {
+    label: "Vender",
+    href: ROUTES.vender,
+    icon: Megaphone,
+    match: "/vender",
+  },
+  {
+    label: "Presentar",
+    href: ROUTES.presentar,
+    icon: Presentation,
+    match: "/presentar",
   },
   {
     label: "Audiolibros",

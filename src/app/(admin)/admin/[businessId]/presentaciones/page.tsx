@@ -9,7 +9,17 @@ export default async function PresentationTemplatesAdminPage({
 }) {
   const { businessId } = await params;
   await requireBusinessAdmin(businessId);
-  const templates = await getRepositories().presentationTemplates.listAdmin(businessId);
+  const repos = getRepositories();
+  const [templates, counts] = await Promise.all([
+    repos.presentationTemplates.listAdmin(businessId),
+    repos.reactions.getCounts("presentation", businessId),
+  ]);
 
-  return <PresentationTemplateManager businessId={businessId} templates={templates} />;
+  return (
+    <PresentationTemplateManager
+      businessId={businessId}
+      templates={templates}
+      counts={counts}
+    />
+  );
 }

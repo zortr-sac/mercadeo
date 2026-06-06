@@ -21,7 +21,7 @@ const poppins = Poppins({
 export const metadata: Metadata = {
   applicationName: APP.name,
   title: {
-    default: `${APP.fullName} - Academia, CRM y copiloto IA`,
+    default: `${APP.fullName} - Formación, anuncios y presentaciones`,
     template: `%s · ${APP.name}`,
   },
   description: APP.description,

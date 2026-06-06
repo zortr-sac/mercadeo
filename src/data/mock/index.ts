@@ -7,7 +7,10 @@ import type {
   NewPresentationTemplateInput,
   PresentationTemplatePatch,
   PresentationTemplateRepository,
-  UsageRepository,
+  NewAdTemplateInput,
+  AdTemplatePatch,
+  AdTemplateRepository,
+  ReactionRepository,
   BusinessRepository,
   CoursePatch,
   DuplicationRepository,
@@ -46,6 +49,8 @@ import type {
   Lesson,
   MessageTemplate,
   PresentationTemplate,
+  AdTemplate,
+  ContentReactionType,
   Prospect,
   ProspectInteraction,
   SubscriptionPayment,
@@ -118,8 +123,6 @@ const businesses: BusinessRepository = {
       logoUrl: null,
       primaryColor: input.primaryColor,
       accentColor: input.accentColor,
-      flyerPrompt: "",
-      presentationPrompt: "",
       customDomain: input.customDomain?.trim() || null,
       registrationPath: `/registro/${slug}`,
       subscriptionPricePen: DEFAULT_SUBSCRIPTION_PRICE_PEN,
@@ -142,14 +145,6 @@ const businesses: BusinessRepository = {
     if (business) {
       business.primaryColor = primaryColor;
       business.accentColor = accentColor;
-    }
-    return tick(undefined);
-  },
-  updatePrompts: (id, flyerPrompt, presentationPrompt) => {
-    const business = businessesData.find((item) => item.id === id);
-    if (business) {
-      business.flyerPrompt = flyerPrompt;
-      business.presentationPrompt = presentationPrompt;
     }
     return tick(undefined);
   },
@@ -672,6 +667,7 @@ const presentationTemplates: PresentationTemplateRepository = {
       filePath: input.filePath ?? null,
       fileName: input.fileName ?? null,
       fileBytes: input.fileBytes ?? 0,
+      slides: input.slides ?? [],
       isPublished: input.isPublished ?? false,
       sortOrder: input.sortOrder ?? 0,
       createdAt: now,
@@ -692,15 +688,91 @@ const presentationTemplates: PresentationTemplateRepository = {
   },
 };
 
-const usage: UsageRepository = {
-  async listForWindow() {
-    return [];
+const adTemplatesData: AdTemplate[] = [];
+
+const adTemplates: AdTemplateRepository = {
+  list: (filter) =>
+    tick(
+      adTemplatesData
+        .filter((a) => a.isPublished)
+        .filter((a) =>
+          filter && "businessId" in filter
+            ? a.businessId === filter.businessId || a.businessId === null
+            : true,
+        )
+        .sort((a, b) => a.sortOrder - b.sortOrder),
+    ),
+  listAdmin: (businessId) =>
+    tick(
+      adTemplatesData
+        .filter((a) => a.businessId === businessId)
+        .sort((a, b) => a.sortOrder - b.sortOrder),
+    ),
+  getById: (id) => tick(adTemplatesData.find((a) => a.id === id) ?? null),
+  create: (input: NewAdTemplateInput) => {
+    const now = new Date().toISOString();
+    const ad: AdTemplate = {
+      id: `ad-${adTemplatesData.length + 1}-${now}`,
+      businessId: input.businessId,
+      title: input.title.trim(),
+      bodyText: input.bodyText.trim(),
+      imageUrl: input.imageUrl ?? null,
+      imagePath: input.imagePath ?? null,
+      category: input.category.trim() || "General",
+      isPublished: input.isPublished ?? false,
+      sortOrder: input.sortOrder ?? 0,
+      createdAt: now,
+    };
+    adTemplatesData.unshift(ad);
+    return tick(ad);
   },
-  async overridesForMonth() {
-    return {};
+  update: (id, patch: AdTemplatePatch) => {
+    const ad = adTemplatesData.find((a) => a.id === id);
+    if (!ad) throw new Error("Anuncio no encontrado");
+    Object.assign(ad, patch);
+    return tick(ad);
   },
-  async setLimitOverride() {
-    // no-op en modo mock (la medición real corre en Supabase)
+  remove: (id) => {
+    const index = adTemplatesData.findIndex((a) => a.id === id);
+    if (index >= 0) adTemplatesData.splice(index, 1);
+    return tick(undefined);
+  },
+};
+
+type MockReaction = {
+  userId: string;
+  businessId: string | null;
+  type: ContentReactionType;
+  contentId: string;
+};
+const reactionsData: MockReaction[] = [];
+
+const reactions: ReactionRepository = {
+  toggle: (userId, businessId, type, contentId) => {
+    const idx = reactionsData.findIndex(
+      (r) => r.userId === userId && r.type === type && r.contentId === contentId,
+    );
+    if (idx >= 0) {
+      reactionsData.splice(idx, 1);
+      return tick({ reacted: false });
+    }
+    reactionsData.push({ userId, businessId, type, contentId });
+    return tick({ reacted: true });
+  },
+  listReactedIds: (userId, type) =>
+    tick(
+      reactionsData
+        .filter((r) => r.userId === userId && r.type === type)
+        .map((r) => r.contentId),
+    ),
+  getCounts: (type, businessId) => {
+    const counts: Record<string, number> = {};
+    for (const r of reactionsData) {
+      if (r.type !== type) continue;
+      if (businessId && r.businessId !== businessId) continue;
+      counts[r.contentId] = (counts[r.contentId] ?? 0) + 1;
+    }
+    return tick(counts);
   },
 };
 
@@ -762,10 +834,11 @@ export const mockRepositories: Repositories = {
   duplication,
   audiobooks,
   presentationTemplates,
+  adTemplates,
+  reactions,
   prospects,
   interactions,
   learnings,
   activity,
-  usage,
   subscriptions,
 };

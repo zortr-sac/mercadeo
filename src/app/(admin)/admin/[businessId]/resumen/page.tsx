@@ -3,7 +3,8 @@ import {
   BookOpen,
   ChevronRight,
   Headphones,
-  MessageCircle,
+  Megaphone,
+  Presentation,
   Users,
   type LucideIcon,
 } from "lucide-react";
@@ -31,10 +32,11 @@ export default async function ResumenPage({
   await requireBusinessAdmin(businessId);
   const repos = getRepositories();
 
-  const [courses, audiobooks, templates, team] = await Promise.all([
+  const [courses, audiobooks, ads, presentations, team] = await Promise.all([
     repos.academy.listCoursesAdmin(businessId),
     repos.audiobooks.listAdmin(businessId),
-    repos.duplication.listMessageTemplates({ businessId }),
+    repos.adTemplates.listAdmin(businessId),
+    repos.presentationTemplates.listAdmin(businessId),
     repos.users.list({ businessId }),
   ]);
 
@@ -54,11 +56,16 @@ export default async function ResumenPage({
       hint: "Audios para escuchar",
     },
     {
-      tab: "mensajes",
-      icon: MessageCircle,
-      // Lo que el miembro ve: plantillas propias + base de plataforma.
-      count: templates.length,
-      hint: "Plantillas para mensajes",
+      tab: "anuncios",
+      icon: Megaphone,
+      count: ads.length,
+      hint: "Anuncios para compartir",
+    },
+    {
+      tab: "presentaciones",
+      icon: Presentation,
+      count: presentations.length,
+      hint: "Presentaciones para mostrar",
     },
     {
       tab: "lideres",

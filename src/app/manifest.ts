@@ -18,15 +18,15 @@ export default function manifest(): MetadataRoute.Manifest {
     categories: ["business", "education", "productivity"],
     shortcuts: [
       {
-        name: "Nuevo mensaje",
-        short_name: "Mensaje",
-        url: "/vender/mensajes",
+        name: "Vender",
+        short_name: "Vender",
+        url: "/vender",
         icons: [{ src: "/icons/icon-192.png", sizes: "192x192" }],
       },
       {
-        name: "Prospectos",
-        short_name: "CRM",
-        url: "/vender/prospectos",
+        name: "Presentar",
+        short_name: "Presentar",
+        url: "/presentar",
         icons: [{ src: "/icons/icon-192.png", sizes: "192x192" }],
       },
     ],

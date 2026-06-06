@@ -339,18 +339,3 @@ export function BigChoice({
     </Card>
   );
 }
-
-/* ── "AI is working" spinner ───────────────────────────────────────── */
-export function AIWorking({ label = "La IA está trabajando…" }: { label?: string }) {
-  return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 14, padding: "24px 0" }}>
-      <div style={{ position: "relative", width: 72, height: 72 }}>
-        <div style={{ position: "absolute", inset: 0, borderRadius: 999, border: "5px solid var(--blue-soft)", borderTopColor: "var(--blue)", animation: "ns-spin 1s linear infinite" }} />
-        <div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center" }}>
-          <Icon name="sparkles" size={30} color="var(--orange)" />
-        </div>
-      </div>
-      <span style={{ fontSize: 18, fontWeight: 600, color: "var(--text-2)" }}>{label}</span>
-    </div>
-  );
-}

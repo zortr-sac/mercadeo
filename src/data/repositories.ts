@@ -18,6 +18,9 @@ import type {
   Playbook,
   PlaybookType,
   PresentationTemplate,
+  PresentationSlide,
+  AdTemplate,
+  ContentReactionType,
   Profile,
   Prospect,
   ProspectInteraction,
@@ -58,8 +61,6 @@ export interface BusinessRepository {
   updateDomain(id: string, hostname: string | null): Promise<void>;
   /** Actualiza el color de marca (unicolor). */
   updateBranding(id: string, primaryColor: string, accentColor: string): Promise<void>;
-  /** Instrucciones base de IA por negocio que se suman al prompt (anuncios y presentaciones). */
-  updatePrompts(id: string, flyerPrompt: string, presentationPrompt: string): Promise<void>;
   createContent(input: NewBusinessContentInput): Promise<BusinessContent>;
 }
 
@@ -195,6 +196,7 @@ export interface NewPresentationTemplateInput {
   filePath?: string | null;
   fileName?: string | null;
   fileBytes?: number;
+  slides?: PresentationSlide[];
   isPublished?: boolean;
   sortOrder?: number;
 }
@@ -207,6 +209,44 @@ export interface PresentationTemplateRepository {
   create(input: NewPresentationTemplateInput): Promise<PresentationTemplate>;
   update(id: string, patch: PresentationTemplatePatch): Promise<PresentationTemplate>;
   remove(id: string): Promise<void>;
+}
+
+export interface NewAdTemplateInput {
+  businessId: string | null;
+  title: string;
+  bodyText: string;
+  category: string;
+  imageUrl?: string | null;
+  imagePath?: string | null;
+  isPublished?: boolean;
+  sortOrder?: number;
+}
+export type AdTemplatePatch = Partial<Omit<NewAdTemplateInput, "businessId">>;
+
+export interface AdTemplateRepository {
+  list(filter?: { businessId?: string | null }): Promise<AdTemplate[]>;
+  listAdmin(businessId: string): Promise<AdTemplate[]>;
+  getById(id: string): Promise<AdTemplate | null>;
+  create(input: NewAdTemplateInput): Promise<AdTemplate>;
+  update(id: string, patch: AdTemplatePatch): Promise<AdTemplate>;
+  remove(id: string): Promise<void>;
+}
+
+export interface ReactionRepository {
+  /** Marca/desmarca el corazón del usuario; devuelve el estado final. */
+  toggle(
+    userId: string,
+    businessId: string | null,
+    type: ContentReactionType,
+    contentId: string,
+  ): Promise<{ reacted: boolean }>;
+  /** IDs de contenido de un tipo que el usuario ya marcó (para pintar el corazón lleno). */
+  listReactedIds(userId: string, type: ContentReactionType): Promise<string[]>;
+  /** Conteo de corazones por contentId (agregado; usa service-role en el server). */
+  getCounts(
+    type: ContentReactionType,
+    businessId?: string | null,
+  ): Promise<Record<string, number>>;
 }
 
 export interface NewProspectInput {
@@ -272,30 +312,6 @@ export interface ActivityRepository {
   getStats(userId: string): Promise<ActivityStats>;
 }
 
-export interface AiUsageRow {
-  userId: string;
-  endpoint: string;
-  costPen: number;
-  createdAt: string;
-}
-
-export interface AiLimitOverrideInput {
-  businessId: string;
-  userId: string;
-  monthKey: string;
-  limitPen: number;
-  updatedBy: string;
-}
-
-export interface UsageRepository {
-  /** Filas de consumo de IA de un negocio desde una fecha (para agregar métricas). */
-  listForWindow(businessId: string, sinceISO: string): Promise<AiUsageRow[]>;
-  /** Overrides de límite del mes: userId → límite en soles. */
-  overridesForMonth(businessId: string, monthKey: string): Promise<Record<string, number>>;
-  /** Fija/actualiza el límite mensual de un usuario. */
-  setLimitOverride(input: AiLimitOverrideInput): Promise<void>;
-}
-
 export interface RecordPaymentInput {
   memberId: string;
   businessId: string | null;
@@ -329,10 +345,11 @@ export interface Repositories {
   duplication: DuplicationRepository;
   audiobooks: AudiobookRepository;
   presentationTemplates: PresentationTemplateRepository;
+  adTemplates: AdTemplateRepository;
+  reactions: ReactionRepository;
   prospects: ProspectRepository;
   interactions: InteractionRepository;
   learnings: LearningRepository;
   activity: ActivityRepository;
-  usage: UsageRepository;
   subscriptions: SubscriptionRepository;
 }

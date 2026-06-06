@@ -4,7 +4,6 @@ import { useMemo, useState, useTransition } from "react";
 import {
   Copy,
   Globe2,
-  ImageIcon,
   LinkIcon,
   Palette,
   Plus,
@@ -60,8 +59,6 @@ export function BusinessAdmin({
   const [contentUrl, setContentUrl] = useState("");
   const [contentCategory, setContentCategory] = useState("Inicio");
   const [contentType, setContentType] = useState<BusinessContentType>("video");
-  const [visualBrief, setVisualBrief] = useState("");
-  const [pendingVisual, startVisualTransition] = useTransition();
   const [pendingBusiness, startBusinessTransition] = useTransition();
   const [pendingContent, startContentTransition] = useTransition();
 
@@ -158,28 +155,6 @@ export function BusinessAdmin({
       } catch {
         toast.error("No se pudo publicar el contenido.");
       }
-    });
-  }
-
-  function generateVisualBrief() {
-    if (!selected) return;
-    startVisualTransition(async () => {
-      const response = await fetch("/api/ai/visual-brief", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          idempotencyKey: crypto.randomUUID(),
-          businessName: selected.name,
-          objective: "crear una imagen para invitar a revisar informacion educativa",
-          productContext: contentDescription,
-        }),
-      });
-      if (!response.ok) {
-        toast.error("No se pudo generar la idea visual.");
-        return;
-      }
-      const payload = (await response.json()) as { visualBrief: string };
-      setVisualBrief(payload.visualBrief);
     });
   }
 
@@ -377,29 +352,11 @@ export function BusinessAdmin({
                 rows={3}
               />
             </Field>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <Button type="submit" loading={pendingContent}>
-                <Upload className="size-5" />
-                Publicar
-              </Button>
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={generateVisualBrief}
-                loading={pendingVisual}
-              >
-                <ImageIcon className="size-5" />
-                Idea visual IA
-              </Button>
-            </div>
+            <Button type="submit" loading={pendingContent}>
+              <Upload className="size-5" />
+              Publicar
+            </Button>
           </form>
-
-          {visualBrief && (
-            <div className="rounded-lg border border-brand-100 bg-brand-50 p-4 text-brand-900">
-              <p className="mb-2 font-semibold">Brief visual seguro</p>
-              <p className="whitespace-pre-line">{visualBrief}</p>
-            </div>
-          )}
 
           <div className="space-y-3">
             <h3 className="font-display text-xl font-semibold">Contenido publicado</h3>

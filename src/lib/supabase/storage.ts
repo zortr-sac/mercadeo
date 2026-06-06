@@ -4,7 +4,7 @@ import { extFromFile } from "@/lib/media";
 
 export const MEDIA_BUCKET = "business-media";
 
-export type MediaKind = "academia" | "audiolibros" | "presentaciones";
+export type MediaKind = "academia" | "audiolibros" | "presentaciones" | "anuncios";
 
 export interface UploadResult {
   url: string;

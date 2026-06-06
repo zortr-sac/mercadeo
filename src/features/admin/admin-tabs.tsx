@@ -7,11 +7,10 @@ import {
   CreditCard,
   Headphones,
   LayoutDashboard,
-  MessageCircle,
+  Megaphone,
   Presentation,
   Settings,
   Users,
-  Wallet,
   type LucideIcon,
 } from "lucide-react";
 import {
@@ -26,10 +25,9 @@ const TAB_ICONS: Record<AdminTab, LucideIcon> = {
   resumen: LayoutDashboard,
   academia: BookOpen,
   audiolibros: Headphones,
+  anuncios: Megaphone,
   presentaciones: Presentation,
-  mensajes: MessageCircle,
   lideres: Users,
-  consumo: Wallet,
   suscripciones: CreditCard,
   ajustes: Settings,
 };

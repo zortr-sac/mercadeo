@@ -14,9 +14,6 @@ const serverSchema = clientSchema.extend({
   SUPABASE_SERVICE_ROLE_KEY: z.string().optional().or(z.literal("")),
   VAPID_PRIVATE_KEY: z.string().optional().or(z.literal("")),
   OPENAI_API_KEY: z.string().optional().or(z.literal("")),
-  GEMINI_API_KEY: z.string().optional().or(z.literal("")),
-  GEMINI_MODEL: z.string().default("gemini-2.5-flash"),
-  GEMINI_IMAGE_MODEL: z.string().default("gemini-2.5-flash-image"),
   VAPID_SUBJECT: z.string().default("mailto:soporte@nexomentor.app"),
   CRON_SECRET: z.string().optional().or(z.literal("")),
 });
@@ -37,9 +34,6 @@ export const serverEnv = serverSchema.parse({
   SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
   VAPID_PRIVATE_KEY: process.env.VAPID_PRIVATE_KEY,
   OPENAI_API_KEY: process.env.OPENAI_API_KEY,
-  GEMINI_API_KEY: process.env.GEMINI_API_KEY,
-  GEMINI_MODEL: process.env.GEMINI_MODEL,
-  GEMINI_IMAGE_MODEL: process.env.GEMINI_IMAGE_MODEL,
   VAPID_SUBJECT: process.env.VAPID_SUBJECT,
   CRON_SECRET: process.env.CRON_SECRET,
 });

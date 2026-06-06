@@ -24,20 +24,19 @@ const YAPE_PLAIN = PAYMENT.yapeDisplay.replace(/\s/g, "");
 const INCLUDED_FEATURES: { icon: IconName; tone: Tone; title: string; desc: string }[] = [
   { icon: "cap", tone: "blue", title: "Academia completa", desc: "Cursos y videos por nivel." },
   { icon: "headphones", tone: "orange", title: "Audiolibros", desc: "Aprende mientras haces otras cosas." },
-  { icon: "sparkles", tone: "blue", title: "Asistente con IA", desc: "Redacta tus mensajes por ti." },
-  { icon: "chat", tone: "orange", title: "Copiloto de chats", desc: "Te dice qué responder." },
-  { icon: "image", tone: "blue", title: "Imágenes con IA", desc: "Materiales listos para compartir." },
-  { icon: "users", tone: "orange", title: "CRM de prospectos", desc: "No olvides a ningún cliente." },
-  { icon: "bell", tone: "blue", title: "Recordatorios", desc: "Mantén tu ritmo cada día." },
-  { icon: "download", tone: "orange", title: "App en tu celular", desc: "Rápida, hasta sin internet." },
-  { icon: "refresh", tone: "blue", title: "Mejoras constantes", desc: "Contenido nuevo, sin costo extra." },
+  { icon: "megaphone", tone: "blue", title: "Anuncios listos", desc: "Cópialos y compártelos en tus redes." },
+  { icon: "slides", tone: "orange", title: "Presentaciones", desc: "Muéstralas a tus clientes y descárgalas." },
+  { icon: "heart", tone: "blue", title: "Tus favoritos", desc: "Guarda el contenido que más te gusta." },
+  { icon: "bell", tone: "orange", title: "Recordatorios", desc: "Mantén tu ritmo cada día." },
+  { icon: "download", tone: "blue", title: "App en tu celular", desc: "Rápida, hasta sin internet." },
+  { icon: "refresh", tone: "orange", title: "Mejoras constantes", desc: "Contenido nuevo, sin costo extra." },
 ];
 
 /** Qué sostiene el aporte mensual (costos operativos de la plataforma). */
 const CONTRIBUTION_COVERS = [
-  "La inteligencia artificial que escribe tus mensajes y crea imágenes.",
+  "Las plantillas de anuncios y presentaciones que usas cada día.",
   "Los servidores, la seguridad y el soporte de tu cuenta.",
-  "El contenido y los materiales que usas cada día.",
+  "La academia, los audiolibros y todo el contenido formativo.",
   "Las mejoras y actualizaciones constantes de la plataforma.",
 ];
 

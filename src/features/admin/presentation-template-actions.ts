@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { getRepositories } from "@/data";
 import type { PresentationTemplatePatch } from "@/data/repositories";
-import type { PresentationTemplate } from "@/data/types";
+import type { PresentationTemplate, PresentationSlide } from "@/data/types";
 import { adminBusinessPath } from "@/lib/constants";
 import { requireBusinessAdmin } from "@/lib/session";
 
@@ -21,6 +21,7 @@ export async function createPresentationTemplateAction(
     filePath?: string | null;
     fileName?: string | null;
     fileBytes?: number;
+    slides?: PresentationSlide[];
     isPublished?: boolean;
   },
 ): Promise<PresentationTemplate> {

@@ -21,7 +21,7 @@ export default function TerminosPage() {
         {
           heading: "2. Descripción del servicio",
           paragraphs: [
-            "NetScale es un servicio de formación (academia, tutoriales) y herramientas de organización y comunicación para vendedores, por suscripción.",
+            "NetScale es un servicio por suscripción de formación (academia y tutoriales) y de plantillas de contenido. El negocio publica anuncios y presentaciones para que sus vendedores los copien, descarguen y compartan en sus propias redes.",
           ],
           bullets: [
             "NO es una oportunidad de negocio, inversión ni programa de afiliación.",
@@ -39,7 +39,7 @@ export default function TerminosPage() {
         {
           heading: "4. Ausencia de garantía de resultados",
           paragraphs: [
-            "La plataforma provee acceso a contenido formativo y herramientas, y no garantiza ingresos, ganancias ni resultados económicos de ningún tipo.",
+            "La plataforma provee acceso a contenido formativo y a plantillas, y no garantiza ingresos, ganancias ni resultados económicos de ningún tipo.",
             "Los resultados dependen exclusivamente del esfuerzo, las circunstancias y la actividad de cada usuario. El contenido es educativo y no constituye asesoría financiera, legal ni de inversión.",
           ],
         },
@@ -47,9 +47,9 @@ export default function TerminosPage() {
           heading: "5. Uso aceptable y conductas prohibidas",
           bullets: [
             "Está prohibido usar la plataforma para operar o promover esquemas piramidales o de captación basados en reclutamiento.",
-            "Está prohibido usar las herramientas (incluida la IA) para prometer ingresos, garantizar ganancias o hacer afirmaciones engañosas.",
+            "Está prohibido usar las plantillas o herramientas para prometer ingresos, garantizar ganancias o hacer afirmaciones engañosas.",
             "Está prohibido usar la plataforma para actividades ilegales o que infrinjan derechos de terceros.",
-            "El usuario es responsable del contenido que crea, edita y envía, incluso cuando parta de una sugerencia generada por IA.",
+            "El usuario es responsable del contenido que copia, comparte o publica en sus propias redes a partir de las plantillas.",
           ],
         },
         {
@@ -60,38 +60,31 @@ export default function TerminosPage() {
           ],
         },
         {
-          heading: "7. Contenido generado por inteligencia artificial",
+          heading: "7. Propiedad intelectual",
           paragraphs: [
-            "La IA ofrece sugerencias; la decisión y la responsabilidad del envío son del usuario.",
-            "No garantizamos que las sugerencias sean adecuadas para cada caso ni que cumplan las leyes aplicables a tu actividad. Existe un Modo Cumplimiento que filtra frases de riesgo como ayuda, no como garantía absoluta.",
+            "El contenido educativo, las plantillas, la marca y el software son de su titular o del negocio que los publica. Se te concede una licencia de uso limitada y personal para tu actividad de venta autorizada. Queda prohibido revender el acceso a la plataforma o redistribuir el contenido fuera de ese uso.",
           ],
         },
         {
-          heading: "8. Propiedad intelectual",
-          paragraphs: [
-            "El contenido educativo, la marca y el software son de su titular. Se te concede una licencia de uso limitada, personal e intransferible. Queda prohibido copiar, redistribuir o revender el contenido.",
-          ],
-        },
-        {
-          heading: "9. Protección de datos personales",
+          heading: "8. Protección de datos personales",
           paragraphs: [
             "El tratamiento de datos se rige por nuestra Política de Privacidad y la Ley N.° 29733. Allí se detalla qué datos se recogen, con qué finalidad y por cuánto tiempo, así como tus derechos de acceso, rectificación, cancelación y oposición.",
           ],
         },
         {
-          heading: "10. Limitación de responsabilidad",
+          heading: "9. Limitación de responsabilidad",
           paragraphs: [
             "Dentro de lo permitido por ley, no respondemos por las decisiones comerciales del usuario ni por su actividad de venta.",
           ],
         },
         {
-          heading: "11. Modelo multiempresa",
+          heading: "10. Modelo multiempresa",
           paragraphs: [
-            "Cuando una empresa-cliente usa la plataforma para su propia gente, queda prohibido operar esquemas piramidales en ella, y nos reservamos el derecho de cerrar esa cuenta. La empresa-cliente es responsable de su actividad y de su gente; nosotros proveemos el software.",
+            "Cuando una empresa-cliente usa la plataforma para su propia gente, queda prohibido operar esquemas piramidales en ella, y nos reservamos el derecho de cerrar esa cuenta. La empresa-cliente es responsable de su actividad, de su gente y del contenido que publica; nosotros proveemos el software.",
           ],
         },
         {
-          heading: "12. Disposiciones finales",
+          heading: "11. Disposiciones finales",
           paragraphs: [
             "Podemos modificar estos Términos notificándolo por los canales de la plataforma. Se aplica la ley peruana y su jurisdicción. Contamos con Libro de Reclamaciones y canales de atención al consumidor.",
           ],
