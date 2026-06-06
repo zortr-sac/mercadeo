@@ -20,5 +20,5 @@ alter table public.content_reactions enable row level security;
 -- el servidor con service-role (sin exponer quién reaccionó).
 drop policy if exists content_reactions_owner_rw on public.content_reactions;
 create policy content_reactions_owner_rw on public.content_reactions for all to authenticated
-  using (user_id = auth.uid())
-  with check (user_id = auth.uid());
+  using (user_id = (select auth.uid()))
+  with check (user_id = (select auth.uid()));

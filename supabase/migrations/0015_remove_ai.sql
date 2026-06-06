@@ -4,3 +4,4 @@
 
 drop table if exists public.ai_usage cascade;
 drop table if exists public.ai_limit_overrides cascade;
+drop table if exists public.ai_generation_events cascade;
