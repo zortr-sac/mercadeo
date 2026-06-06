@@ -1,8 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { SESSION_COOKIE } from "@/lib/constants";
+import { SESSION_COOKIE, isBusinessLoginPath } from "@/lib/constants";
 import { updateSupabaseSession } from "@/lib/supabase/middleware";
 
-const PUBLIC_PATHS = ["/login", "/offline", "/registro", "/terminos", "/privacidad"];
+const PUBLIC_PATHS = ["/bienvenida", "/login", "/offline", "/registro", "/terminos", "/privacidad"];
 
 export async function proxy(request: NextRequest) {
   if (process.env.NEXT_PUBLIC_DATA_SOURCE === "supabase") {
@@ -11,7 +11,9 @@ export async function proxy(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
   const hasSession = Boolean(request.cookies.get(SESSION_COOKIE)?.value);
-  const isPublic = PUBLIC_PATHS.some((path) => pathname.startsWith(path));
+  const isPublic =
+    PUBLIC_PATHS.some((path) => pathname.startsWith(path)) ||
+    isBusinessLoginPath(pathname);
 
   if (!hasSession && !isPublic) {
     const url = request.nextUrl.clone();

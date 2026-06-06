@@ -15,6 +15,7 @@ export const SEED_USERS: Profile[] = [
     rank: "Owner",
     isActive: true,
     joinedAt: "2026-01-15T10:00:00.000Z",
+    subscriptionExpiresAt: null,
   },
   {
     id: "u-business-admin",
@@ -29,6 +30,7 @@ export const SEED_USERS: Profile[] = [
     rank: "Admin de negocio",
     isActive: true,
     joinedAt: "2026-02-02T10:00:00.000Z",
+    subscriptionExpiresAt: null,
   },
   {
     id: "u-member-1",
@@ -43,6 +45,7 @@ export const SEED_USERS: Profile[] = [
     rank: "Cliente activo",
     isActive: true,
     joinedAt: "2026-03-10T10:00:00.000Z",
+    subscriptionExpiresAt: "2027-01-15T10:00:00.000Z",
   },
   {
     id: "u-member-2",
@@ -57,6 +60,7 @@ export const SEED_USERS: Profile[] = [
     rank: "Cliente nuevo",
     isActive: true,
     joinedAt: "2026-04-18T10:00:00.000Z",
+    subscriptionExpiresAt: "2026-05-01T10:00:00.000Z",
   },
 ];
 

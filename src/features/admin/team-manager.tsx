@@ -22,7 +22,9 @@ import { ROLE_LABELS, type Role } from "@/lib/constants";
 import type { Profile } from "@/data/types";
 import { ManagerCard, ManagerHeader, ManagerRow, NoticePanel } from "./admin-ui";
 import {
+  addMemberAction,
   assignLeaderAction,
+  changeMemberPinAction,
   demoteToMemberAction,
   inviteLeaderAction,
   removeFromBusinessAction,
@@ -35,15 +37,18 @@ const ROLE_BADGE: Record<Role, "gold" | "default" | "muted"> = {
 };
 
 /**
- * Gestión del equipo del negocio. Solo el admin de plataforma puede invitar,
- * asignar o quitar líderes; el líder ve el equipo en modo lectura.
+ * Gestión del equipo del negocio. El admin/líder puede **agregar miembros**
+ * (teléfono + PIN) y cambiarles el PIN. Solo el admin de plataforma puede
+ * invitar/asignar líderes.
  */
 export function TeamManager({
   businessId,
+  businessSlug,
   members,
   canManage,
 }: {
   businessId: string;
+  businessSlug: string;
   members: Profile[];
   canManage: boolean;
 }) {
@@ -55,6 +60,65 @@ export function TeamManager({
     email: string;
     password: string;
   } | null>(null);
+
+  // Alta de miembro con teléfono + PIN.
+  const [mName, setMName] = useState("");
+  const [mPhone, setMPhone] = useState("");
+  const [mPin, setMPin] = useState("");
+  const [createdMember, setCreatedMember] = useState<{
+    phone: string;
+    pin: string;
+  } | null>(null);
+
+  function addMember(event: React.FormEvent) {
+    event.preventDefault();
+    if (mName.trim().length < 2) {
+      toast.error("Escribe el nombre del miembro.");
+      return;
+    }
+    if (mPhone.replace(/\D+/g, "").length < 6) {
+      toast.error("Escribe un teléfono válido.");
+      return;
+    }
+    if (mPin.length !== 4) {
+      toast.error("El PIN debe tener 4 números.");
+      return;
+    }
+    startTransition(async () => {
+      try {
+        const res = await addMemberAction(businessId, {
+          name: mName,
+          phone: mPhone,
+          pin: mPin,
+        });
+        setCreatedMember({ phone: res.phone, pin: res.pin });
+        setMName("");
+        setMPhone("");
+        setMPin("");
+        toast.success("Miembro creado.");
+        router.refresh();
+      } catch (error) {
+        toast.error(
+          error instanceof Error ? error.message : "No se pudo crear el miembro.",
+        );
+      }
+    });
+  }
+
+  function changePin(member: Profile) {
+    const pin = window.prompt(`Nuevo PIN de 4 números para ${member.fullName}:`);
+    if (pin == null) return;
+    const clean = pin.replace(/\D+/g, "");
+    if (clean.length !== 4) {
+      toast.error("El PIN debe tener 4 números.");
+      return;
+    }
+    runAction(
+      member.id,
+      () => changeMemberPinAction(businessId, member.id, clean),
+      "PIN actualizado.",
+    );
+  }
 
   function invite(event: React.FormEvent) {
     event.preventDefault();
@@ -111,10 +175,79 @@ export function TeamManager({
 
   return (
     <div className="space-y-5">
+      {/* Alta de miembro (admin o líder del negocio) */}
+      <ManagerCard>
+        <ManagerHeader
+          icon={UserPlus}
+          title="Agregar miembro"
+          description="Crea la cuenta de un cliente con su teléfono y un PIN de 4 números. Esas serán sus credenciales para entrar."
+        />
+        <form onSubmit={addMember} className="space-y-3">
+          <Field label="Nombre del miembro" htmlFor="m-name">
+            <Input
+              id="m-name"
+              value={mName}
+              onChange={(event) => setMName(event.target.value)}
+              placeholder="Ej. Rosa Martínez"
+            />
+          </Field>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Field label="Teléfono" htmlFor="m-phone">
+              <Input
+                id="m-phone"
+                value={mPhone}
+                onChange={(event) => setMPhone(event.target.value)}
+                inputMode="tel"
+                placeholder="Ej. 987 654 321"
+              />
+            </Field>
+            <Field label="PIN (4 números)" htmlFor="m-pin">
+              <Input
+                id="m-pin"
+                value={mPin}
+                onChange={(event) =>
+                  setMPin(event.target.value.replace(/\D+/g, "").slice(0, 4))
+                }
+                inputMode="numeric"
+                placeholder="Ej. 1234"
+              />
+            </Field>
+          </div>
+          <Button type="submit" loading={pending}>
+            <UserPlus className="size-5" aria-hidden />
+            Crear miembro
+          </Button>
+        </form>
+
+        {createdMember && (
+          <NoticePanel tone="warn">
+            <p className="font-semibold">¡Miembro creado! Comparte sus credenciales</p>
+            <p className="mt-1">
+              La persona entra en{" "}
+              <code className="font-mono">/{businessSlug}</code> con:
+            </p>
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <code className="rounded-[var(--radius-sm)] border border-gold-300 bg-gold-100 px-3 py-1.5 font-mono text-base text-gold-900 dark:border-gold-900/50 dark:bg-gold-900/30 dark:text-gold-100">
+                Teléfono: {createdMember.phone} · PIN: {createdMember.pin}
+              </code>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setCreatedMember(null)}
+              >
+                Listo
+              </Button>
+            </div>
+          </NoticePanel>
+        )}
+      </ManagerCard>
+
+      {/* Invitar líder (solo admin de plataforma) */}
       {canManage ? (
         <ManagerCard>
           <ManagerHeader
-            icon={UserPlus}
+            icon={Crown}
             title="Invitar líder"
             description="Asigna a una persona como administradora de este negocio por su correo."
           />
@@ -179,9 +312,7 @@ export function TeamManager({
             <Lock className="size-5" aria-hidden />
             Solo el administrador de la plataforma puede gestionar líderes.
           </span>
-          <p className="mt-1">
-            Aquí puedes ver quiénes integran el equipo de tu negocio.
-          </p>
+          <p className="mt-1">Aquí puedes agregar y gestionar a los miembros de tu negocio.</p>
         </NoticePanel>
       )}
 
@@ -196,7 +327,7 @@ export function TeamManager({
           <EmptyState
             icon={Users}
             title="Aún no hay personas"
-            description="Cuando alguien se registre con el link del negocio, aparecerá aquí."
+            description="Agrega un miembro arriba, o comparte el link de registro del negocio."
           />
         ) : (
           <div className="space-y-3">
@@ -220,72 +351,87 @@ export function TeamManager({
                       </Badge>
                     </div>
                     <p className="truncate text-sm text-muted-foreground">
-                      {member.email}
+                      {member.phone || member.email}
                     </p>
                   </div>
 
-                  {canManage && member.role !== "admin" && (
-                    <div className="flex shrink-0 flex-wrap gap-2">
-                      {member.role === "member" ? (
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          loading={acting}
-                          disabled={pending}
-                          onClick={() =>
-                            runAction(
-                              member.id,
-                              () => assignLeaderAction(businessId, member.id),
-                              "Ahora es líder del negocio.",
-                            )
-                          }
-                        >
-                          <KeyRound className="size-4" aria-hidden />
-                          Hacer líder
-                        </Button>
-                      ) : (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          loading={acting}
-                          disabled={pending}
-                          onClick={() =>
-                            runAction(
-                              member.id,
-                              () => demoteToMemberAction(businessId, member.id),
-                              "Volvió a ser miembro.",
-                            )
-                          }
-                        >
-                          Quitar rol de líder
-                        </Button>
-                      )}
+                  <div className="flex shrink-0 flex-wrap gap-2">
+                    {member.role === "member" && (
                       <Button
-                        variant="ghost"
+                        variant="secondary"
                         size="sm"
-                        className="text-destructive"
                         loading={acting}
                         disabled={pending}
-                        onClick={() => {
-                          if (
-                            !window.confirm(
-                              `¿Sacar a ${member.fullName} de este negocio?`,
-                            )
-                          ) {
-                            return;
-                          }
-                          runAction(
-                            member.id,
-                            () => removeFromBusinessAction(businessId, member.id),
-                            "Persona retirada del negocio.",
-                          );
-                        }}
+                        onClick={() => changePin(member)}
                       >
-                        <UserMinus className="size-4" aria-hidden />
-                        Sacar
+                        <KeyRound className="size-4" aria-hidden />
+                        Cambiar PIN
                       </Button>
-                    </div>
-                  )}
+                    )}
+
+                    {canManage && member.role !== "admin" && (
+                      <>
+                        {member.role === "member" ? (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            loading={acting}
+                            disabled={pending}
+                            onClick={() =>
+                              runAction(
+                                member.id,
+                                () => assignLeaderAction(businessId, member.id),
+                                "Ahora es líder del negocio.",
+                              )
+                            }
+                          >
+                            <Crown className="size-4" aria-hidden />
+                            Hacer líder
+                          </Button>
+                        ) : (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            loading={acting}
+                            disabled={pending}
+                            onClick={() =>
+                              runAction(
+                                member.id,
+                                () => demoteToMemberAction(businessId, member.id),
+                                "Volvió a ser miembro.",
+                              )
+                            }
+                          >
+                            Quitar rol de líder
+                          </Button>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-destructive"
+                          loading={acting}
+                          disabled={pending}
+                          onClick={() => {
+                            if (
+                              !window.confirm(
+                                `¿Sacar a ${member.fullName} de este negocio?`,
+                              )
+                            ) {
+                              return;
+                            }
+                            runAction(
+                              member.id,
+                              () => removeFromBusinessAction(businessId, member.id),
+                              "Persona retirada del negocio.",
+                            );
+                          }}
+                        >
+                          <UserMinus className="size-4" aria-hidden />
+                          Sacar
+                        </Button>
+                      </>
+                    )}
+                  </div>
                 </ManagerRow>
               );
             })}

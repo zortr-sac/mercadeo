@@ -2,7 +2,7 @@ import { z } from "zod";
 
 const clientSchema = z.object({
   NEXT_PUBLIC_DATA_SOURCE: z.enum(["mock", "supabase"]).default("mock"),
-  NEXT_PUBLIC_APP_NAME: z.string().default("Nexo Mentor"),
+  NEXT_PUBLIC_APP_NAME: z.string().default("NetScale"),
   NEXT_PUBLIC_APP_URL: z.string().url().default("http://localhost:3000"),
   NEXT_PUBLIC_SUPABASE_URL: z.string().url().optional().or(z.literal("")),
   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: z.string().optional().or(z.literal("")),
@@ -17,6 +17,7 @@ const serverSchema = clientSchema.extend({
   GEMINI_API_KEY: z.string().optional().or(z.literal("")),
   GEMINI_MODEL: z.string().default("gemini-2.5-flash"),
   VAPID_SUBJECT: z.string().default("mailto:soporte@nexomentor.app"),
+  CRON_SECRET: z.string().optional().or(z.literal("")),
 });
 
 export const env = clientSchema.parse({
@@ -38,6 +39,7 @@ export const serverEnv = serverSchema.parse({
   GEMINI_API_KEY: process.env.GEMINI_API_KEY,
   GEMINI_MODEL: process.env.GEMINI_MODEL,
   VAPID_SUBJECT: process.env.VAPID_SUBJECT,
+  CRON_SECRET: process.env.CRON_SECRET,
 });
 
 export function getSupabasePublishableKey() {

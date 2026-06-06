@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getRepositories } from "@/data";
 import { checkCompliance, makeSafeAlternative } from "@/lib/ai/compliance";
 import { generateWithGemini } from "@/lib/ai/gemini";
+import { assertWithinBudget, recordAiUsage } from "@/lib/ai/usage";
 import { LEGAL_DISCLAIMERS } from "@/lib/constants";
 import { requireSession } from "@/lib/session";
 import {
@@ -96,6 +97,12 @@ export async function POST(request: Request) {
   }
 
   const input = parsed.data;
+
+  const budget = await assertWithinBudget(user.businessId, user.id);
+  if (!budget.ok) {
+    return NextResponse.json({ error: "ai_limit" }, { status: 429 });
+  }
+
   const repos = getRepositories();
   const prospect = await repos.prospects.getById(input.prospectId);
   if (!prospect || prospect.ownerId !== user.id) {
@@ -161,6 +168,15 @@ export async function POST(request: Request) {
       { status: 503 },
     );
   }
+
+  await recordAiUsage({
+    businessId: user.businessId,
+    userId: user.id,
+    endpoint: "conversation",
+    model: generated.model,
+    usage: generated.usage,
+    idempotencyKey: input.idempotencyKey,
+  });
 
   const data = parseJsonLoose(generated.text);
   const rawSuggestions = Array.isArray(data?.sugerencias)

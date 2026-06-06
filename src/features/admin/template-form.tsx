@@ -5,22 +5,16 @@ import { Trash2 } from "lucide-react";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Field, Input, Select, Textarea } from "@/components/ui/field";
+import { Field, Input, Textarea } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
-import {
-  SCRIPT_CATEGORY_LABELS,
-  type MessageTemplate,
-  type MessageTone,
-  type ScriptCategory,
-} from "@/data/types";
-import { MESSAGE_TONE_LABELS } from "./message-meta";
+import type { MessageTemplate } from "@/data/types";
 import {
   createTemplateAction,
   removeTemplateAction,
   updateTemplateAction,
 } from "./template-actions";
 
-/** Modal para crear o editar una plantilla de mensaje del negocio. */
+/** Modal para crear o editar un mensaje del negocio (con system prompt para la IA). */
 export function TemplateForm({
   businessId,
   template,
@@ -35,49 +29,40 @@ export function TemplateForm({
   const [pending, startTransition] = useTransition();
 
   const [title, setTitle] = useState(template?.title ?? "");
-  const [category, setCategory] = useState<ScriptCategory>(
-    template?.category ?? "prospecting",
-  );
+  // `situation` se reutiliza como la descripción breve que ve el miembro.
   const [situation, setSituation] = useState(template?.situation ?? "");
+  const [systemPrompt, setSystemPrompt] = useState(template?.systemPrompt ?? "");
   const [baseText, setBaseText] = useState(template?.baseText ?? "");
-  const [defaultTone, setDefaultTone] = useState<MessageTone>(
-    template?.defaultTone ?? "warm",
-  );
-  const [complianceHint, setComplianceHint] = useState(
-    template?.complianceHint ?? "",
-  );
 
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     if (title.trim().length < 3) {
-      toast.error("Escribe un título para la plantilla.");
+      toast.error("Escribe un nombre para el mensaje.");
       return;
     }
-    if (baseText.trim().length < 5) {
-      toast.error("Escribe el texto base de la plantilla.");
+    if (systemPrompt.trim().length < 10) {
+      toast.error("Escribe las instrucciones para la IA (system prompt).");
       return;
     }
     const input = {
       title: title.trim(),
-      category,
       situation: situation.trim(),
+      systemPrompt: systemPrompt.trim(),
       baseText: baseText.trim(),
-      defaultTone,
-      complianceHint: complianceHint.trim(),
     };
     startTransition(async () => {
       try {
         if (isEdit && template) {
           await updateTemplateAction(businessId, template.id, input);
-          toast.success("Plantilla actualizada.");
+          toast.success("Mensaje actualizado.");
         } else {
           await createTemplateAction(businessId, input);
-          toast.success("Plantilla creada.");
+          toast.success("Mensaje creado.");
         }
         onClose();
         router.refresh();
       } catch {
-        toast.error("No se pudo guardar la plantilla.");
+        toast.error("No se pudo guardar el mensaje.");
       }
     });
   }
@@ -86,7 +71,7 @@ export function TemplateForm({
     if (!template) return;
     if (
       !window.confirm(
-        `¿Eliminar la plantilla "${template.title}"? Esta acción no se puede deshacer.`,
+        `¿Eliminar el mensaje "${template.title}"? Esta acción no se puede deshacer.`,
       )
     ) {
       return;
@@ -94,11 +79,11 @@ export function TemplateForm({
     startTransition(async () => {
       try {
         await removeTemplateAction(businessId, template.id);
-        toast.success("Plantilla eliminada.");
+        toast.success("Mensaje eliminado.");
         onClose();
         router.refresh();
       } catch {
-        toast.error("No se pudo eliminar la plantilla.");
+        toast.error("No se pudo eliminar el mensaje.");
       }
     });
   }
@@ -107,83 +92,57 @@ export function TemplateForm({
     <Modal
       open
       onClose={onClose}
-      title={isEdit ? "Editar plantilla" : "Nueva plantilla"}
-      description="Texto base que la IA personaliza para cada cliente. Evita prometer ingresos."
+      title={isEdit ? "Editar mensaje" : "Nuevo mensaje"}
+      description="Define cómo debe responder la IA para este mensaje."
     >
       <form onSubmit={handleSubmit} className="space-y-4">
-        <Field label="Título" htmlFor="t-title">
+        <Field label="Nombre del mensaje" htmlFor="t-title">
           <Input
             id="t-title"
             value={title}
             onChange={(event) => setTitle(event.target.value)}
-            placeholder="Ej. Primer saludo a un conocido"
+            placeholder="Ej. Saludar a alguien nuevo"
             required
           />
         </Field>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Categoría" htmlFor="t-category">
-            <Select
-              id="t-category"
-              value={category}
-              onChange={(event) =>
-                setCategory(event.target.value as ScriptCategory)
-              }
-            >
-              {Object.entries(SCRIPT_CATEGORY_LABELS).map(([value, label]) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
-              ))}
-            </Select>
-          </Field>
-          <Field label="Tono" htmlFor="t-tone">
-            <Select
-              id="t-tone"
-              value={defaultTone}
-              onChange={(event) =>
-                setDefaultTone(event.target.value as MessageTone)
-              }
-            >
-              {Object.entries(MESSAGE_TONE_LABELS).map(([value, label]) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
-              ))}
-            </Select>
-          </Field>
-        </div>
         <Field
-          label="Situación"
-          htmlFor="t-situation"
-          hint="¿Cuándo se usa esta plantilla?"
+          label="Descripción breve"
+          htmlFor="t-desc"
+          hint="Una línea para que tu equipo sepa de qué se trata."
         >
           <Input
-            id="t-situation"
+            id="t-desc"
             value={situation}
             onChange={(event) => setSituation(event.target.value)}
-            placeholder="Ej. La persona mostró interés pero no respondió"
+            placeholder="Ej. Para romper el hielo con alguien que acabas de conocer"
           />
         </Field>
-        <Field label="Texto base" htmlFor="t-base">
+        <Field
+          label="¿Cómo debe responder la IA? (system prompt)"
+          htmlFor="t-system"
+          hint="Indícale el objetivo, el tono y el estilo del mensaje que debe redactar."
+        >
+          <Textarea
+            id="t-system"
+            value={systemPrompt}
+            onChange={(event) => setSystemPrompt(event.target.value)}
+            rows={6}
+            className="min-h-36 text-lg leading-relaxed"
+            placeholder="Ej. Eres cálido y cercano. Redacta un saludo breve para romper el hielo con un prospecto nuevo, sin presión, para WhatsApp."
+          />
+        </Field>
+        <Field
+          label="Mensaje de ejemplo (respaldo)"
+          htmlFor="t-base"
+          hint="Se usa tal cual si la IA no está disponible en ese momento."
+        >
           <Textarea
             id="t-base"
             value={baseText}
             onChange={(event) => setBaseText(event.target.value)}
-            rows={5}
-            className="min-h-32 text-lg leading-relaxed"
-            placeholder="Escribe el mensaje base…"
-          />
-        </Field>
-        <Field
-          label="Nota de cumplimiento"
-          htmlFor="t-hint"
-          hint="Recordatorio para usar la plantilla de forma segura (opcional)."
-        >
-          <Input
-            id="t-hint"
-            value={complianceHint}
-            onChange={(event) => setComplianceHint(event.target.value)}
-            placeholder="Ej. No prometer ganancias ni resultados."
+            rows={4}
+            className="min-h-28 text-lg leading-relaxed"
+            placeholder="Ej. Hola, qué gusto saludarte. Me acordé de ti y quería preguntarte cómo has estado…"
           />
         </Field>
 
@@ -212,7 +171,7 @@ export function TemplateForm({
               Cancelar
             </Button>
             <Button type="submit" loading={pending}>
-              {isEdit ? "Guardar" : "Crear plantilla"}
+              {isEdit ? "Guardar" : "Crear mensaje"}
             </Button>
           </div>
         </div>

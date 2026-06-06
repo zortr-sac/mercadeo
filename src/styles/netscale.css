@@ -1,0 +1,151 @@
+/* ── NetScale Design System ─────────────────────────────────────────
+   Ported 1:1 from the approved prototype (prototipo/styles.css).
+   Mobile-first PWA for distributors aged 60+. High contrast, large
+   targets, calm & warm. Element resets are scoped to .ns-app so the
+   existing admin UI (Tailwind) is never affected. */
+
+:root {
+  /* color */
+  --blue: #1D4ED8;
+  --blue-dark: #1E40AF;
+  --blue-soft: #EFF4FF;
+  --blue-tint: #DBE6FF;
+  --orange: #EA580C;
+  --orange-light: #FB923C;
+  --orange-soft: #FFF1E8;
+  --bg: #F8FAFC;
+  --surface: #FFFFFF;
+  --border: #E2E8F0;
+  --border-strong: #CBD5E1;
+  --text: #0F172A;
+  --text-2: #475569;
+  --green: #16A34A;
+  --green-soft: #E7F6EC;
+  --locked: #94A3B8;
+  --locked-soft: #EEF2F6;
+
+  /* type — mapped to the project's next/font variables */
+  --font-head: var(--font-display), "Poppins", system-ui, sans-serif;
+  --font-body: var(--font-inter), "Inter", system-ui, sans-serif;
+
+  /* shape */
+  --r-card: 18px;
+  --r-btn: 14px;
+  --shadow-card: 0 1px 2px rgba(15,23,42,.04), 0 4px 14px rgba(15,23,42,.06);
+  --shadow-pop: 0 8px 30px rgba(15,23,42,.16);
+  --shadow-nav: 0 -2px 16px rgba(15,23,42,.06);
+
+  /* device safe areas */
+  --status-h: 54px;
+  --nav-h: 78px;
+}
+
+/* outer canvas: behind the centered mobile column on desktop */
+.ns-shell {
+  min-height: 100dvh;
+  background: #e9edf3;
+  display: flex;
+  justify-content: center;
+}
+
+/* the app canvas (mobile column) */
+.ns-app {
+  position: relative;
+  width: 100%;
+  max-width: 440px;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  font-family: var(--font-body);
+  font-size: 18px;
+  line-height: 1.5;
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* App shell con barra inferior FIJA: altura exacta del viewport para que solo
+   `.ns-scroll` scrollee y la nav quede pegada al fondo (la barra nativa del
+   móvil se respeta con el padding seguro del propio nav). Las páginas públicas
+   (registro/login) usan `.ns-app` sin esto y sí scrollean el documento. */
+.ns-app-fixed {
+  height: 100dvh;
+  overflow: hidden;
+}
+
+.ns-app * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+/* scroll region (between top bar and bottom nav). `min-height: 0` is the key:
+   without it the flex item grows to its content and the whole document scrolls
+   (dragging the fixed bottom nav). With it, scrolling stays inside this region
+   and the bottom nav stays pinned above the device's native nav bar. */
+.ns-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.ns-scroll::-webkit-scrollbar { display: none; }
+
+/* generic helpers */
+.ns-pad { padding: 20px; }
+.ns-title { font-family: var(--font-head); font-weight: 600; color: var(--text); letter-spacing: -.01em; }
+.ns-sub { color: var(--text-2); }
+
+.ns-app h1, .ns-app h2, .ns-app h3, .ns-app h4 {
+  font-family: var(--font-head); font-weight: 600; margin: 0; letter-spacing: -.015em;
+}
+.ns-app p { margin: 0; }
+.ns-app button { font-family: var(--font-body); cursor: pointer; border: none; background: none; }
+.ns-app input, .ns-app textarea { font-family: var(--font-body); }
+
+/* tap feedback for cards/buttons */
+.ns-press { transition: transform .12s ease, box-shadow .12s ease, background .12s ease; }
+.ns-press:active { transform: scale(.975); }
+
+/* fade/slide screen transition */
+@keyframes ns-screen-in {
+  from { transform: translateY(10px); }
+  to   { transform: translateY(0); }
+}
+.ns-screen { animation: ns-screen-in .26s ease both; }
+
+@keyframes ns-pop-in {
+  from { opacity: 0; transform: translateY(14px) scale(.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes ns-sheet-up {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+@keyframes ns-fade-in { from { opacity: 0; } to { opacity: 1; } }
+
+@keyframes ns-toast-in {
+  0%   { opacity: 0; transform: translate(-50%, 16px) scale(.96); }
+  100% { opacity: 1; transform: translate(-50%, 0) scale(1); }
+}
+
+@keyframes ns-check-draw {
+  to { stroke-dashoffset: 0; }
+}
+
+/* shimmer for placeholders */
+@keyframes ns-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* staggered list entrance */
+@keyframes ns-rise {
+  from { transform: translateY(12px); }
+  to   { transform: translateY(0); }
+}
+.ns-rise { animation: ns-rise .4s ease both; }
+
+/* progress bar fill */
+@keyframes ns-bar-grow { from { transform: scaleX(0); } }
+
+@keyframes ns-spin { to { transform: rotate(360deg); } }

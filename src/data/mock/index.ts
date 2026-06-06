@@ -4,10 +4,10 @@ import type {
   ActivityRepository,
   AudiobookPatch,
   AudiobookRepository,
+  UsageRepository,
   BusinessRepository,
   CoursePatch,
   DuplicationRepository,
-  FeedRepository,
   InteractionRepository,
   LearningRepository,
   LessonPatch,
@@ -21,13 +21,14 @@ import type {
   NewLearningInput,
   NewLessonInput,
   NewMessageTemplateInput,
-  NewPostInput,
   NewProspectInput,
-  PostPatch,
   ProspectPatch,
   ProspectRepository,
   Repositories,
   UserRepository,
+  SubscriptionRepository,
+  RecordPaymentInput,
+  BusinessExpirySummary,
 } from "../repositories";
 import type {
   ActivityEvent,
@@ -41,11 +42,12 @@ import type {
   Learning,
   Lesson,
   MessageTemplate,
-  Post,
   Prospect,
   ProspectInteraction,
+  SubscriptionPayment,
 } from "../types";
 import { ACTIVITY_POINTS } from "../types";
+import { getSubscriptionState } from "@/lib/subscription";
 import { SEED_PROSPECTS } from "./seed-prospects";
 import { SEED_COURSES } from "./seed-academy";
 import { SEED_BUSINESSES, SEED_BUSINESS_CONTENT } from "./seed-businesses";
@@ -55,13 +57,10 @@ import {
   SEED_RESOURCES,
   SEED_SCRIPTS,
 } from "./seed-duplication";
-import { SEED_POSTS } from "./seed-feed";
 import { SEED_USERS } from "./seed-users";
 
 const tick = <T>(value: T): Promise<T> =>
   new Promise((resolve) => setTimeout(() => resolve(value), 30));
-
-const posts: Post[] = [...SEED_POSTS];
 
 const businessesData: Business[] = [...SEED_BUSINESSES];
 const businessContentData: BusinessContent[] = [...SEED_BUSINESS_CONTENT];
@@ -177,61 +176,6 @@ const users: UserRepository = {
   },
 };
 
-const feed: FeedRepository = {
-  list: (filter) => {
-    const items = posts.filter((post) => {
-      const typeMatches = filter?.type ? post.type === filter.type : true;
-      const businessMatches =
-        filter && "businessId" in filter
-          ? post.businessId === filter.businessId || post.businessId === null
-          : true;
-      return typeMatches && businessMatches;
-    });
-    items.sort((a, b) => {
-      if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
-      return b.createdAt.localeCompare(a.createdAt);
-    });
-    return tick(items);
-  },
-  getById: (id) => tick(posts.find((post) => post.id === id) ?? null),
-  create: (input: NewPostInput) => {
-    const now = new Date().toISOString();
-    const post: Post = {
-      id: `p-${posts.length + 1}-${now}`,
-      businessId: input.businessId ?? null,
-      type: input.type,
-      title: input.title,
-      body: input.body,
-      authorId: input.authorId,
-      coverUrl: null,
-      pinned: input.pinned ?? false,
-      eventDate: input.eventDate ?? null,
-      eventLocation: input.eventLocation ?? null,
-      reactions: 0,
-      createdAt: now,
-    };
-    posts.unshift(post);
-    return tick(post);
-  },
-  update: (id, patch: PostPatch) => {
-    const post = posts.find((item) => item.id === id);
-    if (!post) throw new Error("Post no encontrado");
-    Object.assign(post, patch);
-    return tick(post);
-  },
-  remove: (id) => {
-    const index = posts.findIndex((item) => item.id === id);
-    if (index >= 0) posts.splice(index, 1);
-    return tick(undefined);
-  },
-  toggleReaction: (id, delta) => {
-    const post = posts.find((item) => item.id === id);
-    if (!post) return tick(0);
-    post.reactions = Math.max(0, post.reactions + delta);
-    return tick(post.reactions);
-  },
-};
-
 type MockCourse = CourseWithContent;
 const coursesData: MockCourse[] = SEED_COURSES.map((course) => ({
   ...course,
@@ -253,6 +197,8 @@ function toCourse(course: MockCourse): Course {
     sortOrder: course.sortOrder,
   };
 }
+
+const completedByUser = new Map<string, Set<string>>();
 
 const academy: AcademyRepository = {
   listCourses: (filter) => {
@@ -277,6 +223,13 @@ const academy: AcademyRepository = {
       if (lesson) return tick({ course, lesson });
     }
     return tick(null);
+  },
+  getCompletedLessonIds: (userId) => tick(Array.from(completedByUser.get(userId) ?? [])),
+  markLessonComplete: (userId, lessonId) => {
+    const set = completedByUser.get(userId) ?? new Set<string>();
+    set.add(lessonId);
+    completedByUser.set(userId, set);
+    return tick(undefined);
   },
   listCoursesAdmin: (businessId) =>
     tick(
@@ -431,6 +384,7 @@ const duplication: DuplicationRepository = {
       baseText: input.baseText.trim(),
       defaultTone: input.defaultTone,
       complianceHint: input.complianceHint.trim(),
+      systemPrompt: input.systemPrompt.trim(),
     };
     templatesData.unshift(template);
     return tick(template);
@@ -587,7 +541,6 @@ const activity: ActivityRepository = {
       conversation_used: 0,
       message_generated: 0,
       learning_logged: 0,
-      post_created: 0,
     } as Record<ActivityKind, number>;
     let totalPoints = 0;
     let weekCount = 0;
@@ -662,10 +615,72 @@ const audiobooks: AudiobookRepository = {
   },
 };
 
+const usage: UsageRepository = {
+  async listForWindow() {
+    return [];
+  },
+  async overridesForMonth() {
+    return {};
+  },
+  async setLimitOverride() {
+    // no-op en modo mock (la medición real corre en Supabase)
+  },
+};
+
+const subscriptionPaymentsData: SubscriptionPayment[] = [];
+
+const subscriptions: SubscriptionRepository = {
+  recordPayment: ({
+    memberId,
+    businessId,
+    amountPen,
+    periodEnd,
+    recordedBy,
+    note,
+  }: RecordPaymentInput) => {
+    const user = SEED_USERS.find((item) => item.id === memberId);
+    if (!user) throw new Error("Cliente no encontrado");
+    user.subscriptionExpiresAt = periodEnd;
+    user.subscriptionReminderSentAt = null;
+    const now = new Date().toISOString();
+    subscriptionPaymentsData.unshift({
+      id: `pay-${subscriptionPaymentsData.length + 1}-${now}`,
+      memberId,
+      businessId,
+      amountPen,
+      paidAt: now,
+      periodEnd,
+      recordedBy,
+      note: note ?? null,
+      createdAt: now,
+    });
+    return tick(user);
+  },
+  getExpirySummaryByBusiness: () => {
+    const now = new Date();
+    const summary: Record<string, BusinessExpirySummary> = {};
+    for (const user of SEED_USERS) {
+      if (user.role !== "member" || !user.businessId) continue;
+      let bucket = summary[user.businessId];
+      if (!bucket) {
+        bucket = { expired: 0, expiringSoon: 0, active: 0, total: 0 };
+        summary[user.businessId] = bucket;
+      }
+      bucket.total += 1;
+      const state = getSubscriptionState(user.subscriptionExpiresAt, now);
+      if (state === "expired") bucket.expired += 1;
+      else if (state === "expiring_soon") bucket.expiringSoon += 1;
+      else if (state === "active") bucket.active += 1;
+    }
+    return tick(summary);
+  },
+  listPayments: (memberId) =>
+    tick(subscriptionPaymentsData.filter((payment) => payment.memberId === memberId)),
+};
+
 export const mockRepositories: Repositories = {
   businesses,
   users,
-  feed,
   academy,
   duplication,
   audiobooks,
@@ -673,4 +688,6 @@ export const mockRepositories: Repositories = {
   interactions,
   learnings,
   activity,
+  usage,
+  subscriptions,
 };

@@ -17,8 +17,6 @@ import type {
   MessageTone,
   Playbook,
   PlaybookType,
-  Post,
-  PostType,
   Profile,
   Prospect,
   ProspectInteraction,
@@ -28,19 +26,9 @@ import type {
   Resource,
   Script,
   ScriptCategory,
+  SubscriptionPayment,
 } from "./types";
 import type { Role } from "@/lib/constants";
-
-export interface NewPostInput {
-  businessId?: string | null;
-  type: PostType;
-  title: string;
-  body: string;
-  authorId: string;
-  eventDate?: string | null;
-  eventLocation?: string | null;
-  pinned?: boolean;
-}
 
 export interface NewBusinessInput {
   name: string;
@@ -79,24 +67,6 @@ export interface UserRepository {
   assign(userId: string, businessId: string | null, role: Role): Promise<Profile>;
 }
 
-export interface PostPatch {
-  type?: PostType;
-  title?: string;
-  body?: string;
-  eventDate?: string | null;
-  eventLocation?: string | null;
-  pinned?: boolean;
-}
-
-export interface FeedRepository {
-  list(filter?: { type?: PostType; businessId?: string | null }): Promise<Post[]>;
-  getById(id: string): Promise<Post | null>;
-  create(input: NewPostInput): Promise<Post>;
-  update(id: string, patch: PostPatch): Promise<Post>;
-  remove(id: string): Promise<void>;
-  toggleReaction(id: string, delta: 1 | -1): Promise<number>;
-}
-
 export interface NewCourseInput {
   businessId: string | null;
   title: string;
@@ -132,6 +102,9 @@ export interface AcademyRepository {
     courseSlug: string,
     lessonSlug: string,
   ): Promise<{ course: CourseWithContent; lesson: Lesson } | null>;
+  // --- Progress (Supabase lesson_progress) ---
+  getCompletedLessonIds(userId: string): Promise<string[]>;
+  markLessonComplete(userId: string, lessonId: string): Promise<void>;
   // --- Admin ---
   listCoursesAdmin(businessId: string): Promise<Course[]>;
   getCourseById(id: string): Promise<CourseWithContent | null>;
@@ -153,6 +126,7 @@ export interface NewMessageTemplateInput {
   baseText: string;
   defaultTone: MessageTone;
   complianceHint: string;
+  systemPrompt: string;
 }
 export type MessageTemplatePatch = Partial<Omit<NewMessageTemplateInput, "businessId">>;
 
@@ -270,10 +244,59 @@ export interface ActivityRepository {
   getStats(userId: string): Promise<ActivityStats>;
 }
 
+export interface AiUsageRow {
+  userId: string;
+  endpoint: string;
+  costPen: number;
+  createdAt: string;
+}
+
+export interface AiLimitOverrideInput {
+  businessId: string;
+  userId: string;
+  monthKey: string;
+  limitPen: number;
+  updatedBy: string;
+}
+
+export interface UsageRepository {
+  /** Filas de consumo de IA de un negocio desde una fecha (para agregar métricas). */
+  listForWindow(businessId: string, sinceISO: string): Promise<AiUsageRow[]>;
+  /** Overrides de límite del mes: userId → límite en soles. */
+  overridesForMonth(businessId: string, monthKey: string): Promise<Record<string, number>>;
+  /** Fija/actualiza el límite mensual de un usuario. */
+  setLimitOverride(input: AiLimitOverrideInput): Promise<void>;
+}
+
+export interface RecordPaymentInput {
+  memberId: string;
+  businessId: string | null;
+  amountPen: number;
+  /** Nuevo vencimiento ya calculado (ver computeRenewedExpiry). ISO string. */
+  periodEnd: string;
+  recordedBy: string;
+  note?: string | null;
+}
+
+export interface BusinessExpirySummary {
+  expired: number;
+  expiringSoon: number;
+  active: number;
+  total: number;
+}
+
+export interface SubscriptionRepository {
+  /** Registra un pago: extiende el vencimiento del cliente y guarda el historial. */
+  recordPayment(input: RecordPaymentInput): Promise<Profile>;
+  /** Resumen de vencimientos por negocio (para los indicadores del dashboard). */
+  getExpirySummaryByBusiness(): Promise<Record<string, BusinessExpirySummary>>;
+  /** Historial de pagos de un cliente (más reciente primero). */
+  listPayments(memberId: string): Promise<SubscriptionPayment[]>;
+}
+
 export interface Repositories {
   businesses: BusinessRepository;
   users: UserRepository;
-  feed: FeedRepository;
   academy: AcademyRepository;
   duplication: DuplicationRepository;
   audiobooks: AudiobookRepository;
@@ -281,4 +304,6 @@ export interface Repositories {
   interactions: InteractionRepository;
   learnings: LearningRepository;
   activity: ActivityRepository;
+  usage: UsageRepository;
+  subscriptions: SubscriptionRepository;
 }

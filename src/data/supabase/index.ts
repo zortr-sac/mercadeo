@@ -5,10 +5,10 @@ import type {
   ActivityRepository,
   AudiobookPatch,
   AudiobookRepository,
+  UsageRepository,
   BusinessRepository,
   CoursePatch,
   DuplicationRepository,
-  FeedRepository,
   InteractionRepository,
   LearningRepository,
   LessonPatch,
@@ -22,13 +22,14 @@ import type {
   NewLearningInput,
   NewLessonInput,
   NewMessageTemplateInput,
-  NewPostInput,
   NewProspectInput,
-  PostPatch,
   ProspectPatch,
   ProspectRepository,
   Repositories,
   UserRepository,
+  SubscriptionRepository,
+  RecordPaymentInput,
+  BusinessExpirySummary,
 } from "../repositories";
 import type {
   ActivityEvent,
@@ -44,14 +45,15 @@ import type {
   Lesson,
   MessageTemplate,
   Playbook,
-  Post,
   Profile,
   Prospect,
   ProspectInteraction,
   Resource,
   Script,
+  SubscriptionPayment,
 } from "../types";
 import { ACTIVITY_POINTS } from "../types";
+import { getSubscriptionState } from "@/lib/subscription";
 
 /* ============================ Mappers (snake_case DB -> camelCase domain) ============================ */
 
@@ -105,22 +107,20 @@ function mapProfile(row: any): Profile {
     rank: row.rank ?? null,
     isActive: row.is_active ?? true,
     joinedAt: row.joined_at ?? row.created_at ?? "",
+    subscriptionExpiresAt: row.subscription_expires_at ?? null,
   };
 }
 
-function mapPost(row: any): Post {
+function mapSubscriptionPayment(row: any): SubscriptionPayment {
   return {
     id: row.id,
+    memberId: row.member_id,
     businessId: row.business_id ?? null,
-    type: row.type,
-    title: row.title,
-    body: row.body,
-    authorId: row.author_id,
-    coverUrl: row.cover_url ?? null,
-    pinned: row.pinned,
-    eventDate: row.event_date ?? null,
-    eventLocation: row.event_location ?? null,
-    reactions: row.reactions,
+    amountPen: Number(row.amount_pen ?? 0),
+    paidAt: row.paid_at,
+    periodEnd: row.period_end,
+    recordedBy: row.recorded_by ?? null,
+    note: row.note ?? null,
     createdAt: row.created_at,
   };
 }
@@ -205,6 +205,7 @@ function mapTemplate(row: any): MessageTemplate {
     baseText: row.base_text,
     defaultTone: row.default_tone,
     complianceHint: row.compliance_hint,
+    systemPrompt: row.system_prompt ?? "",
   };
 }
 
@@ -539,76 +540,6 @@ const users: UserRepository = {
   },
 };
 
-const feed: FeedRepository = {
-  async list(filter) {
-    const supabase = await db();
-    let query = supabase.from("posts").select("*");
-    if (filter?.type) query = query.eq("type", filter.type);
-    if (filter && "businessId" in filter) query = scopeBusiness(query, filter.businessId);
-    const { data, error } = await query
-      .order("pinned", { ascending: false })
-      .order("created_at", { ascending: false });
-    if (error) throw error;
-    return (data ?? []).map(mapPost);
-  },
-  async getById(id) {
-    const supabase = await db();
-    const { data } = await supabase.from("posts").select("*").eq("id", id).maybeSingle();
-    return data ? mapPost(data) : null;
-  },
-  async create(input: NewPostInput) {
-    const supabase = await db();
-    const { data, error } = await supabase
-      .from("posts")
-      .insert({
-        business_id: input.businessId ?? null,
-        type: input.type,
-        title: input.title,
-        body: input.body,
-        author_id: input.authorId,
-        pinned: input.pinned ?? false,
-        event_date: input.eventDate ?? null,
-        event_location: input.eventLocation ?? null,
-      })
-      .select("*")
-      .single();
-    if (error) throw error;
-    return mapPost(data);
-  },
-  async update(id, patch: PostPatch) {
-    const supabase = await db();
-    const row: Record<string, unknown> = {};
-    if (patch.type !== undefined) row.type = patch.type;
-    if (patch.title !== undefined) row.title = patch.title;
-    if (patch.body !== undefined) row.body = patch.body;
-    if (patch.pinned !== undefined) row.pinned = patch.pinned;
-    if (patch.eventDate !== undefined) row.event_date = patch.eventDate;
-    if (patch.eventLocation !== undefined) row.event_location = patch.eventLocation;
-    const { data, error } = await supabase
-      .from("posts")
-      .update(row)
-      .eq("id", id)
-      .select("*")
-      .single();
-    if (error) throw error;
-    return mapPost(data);
-  },
-  async remove(id) {
-    const supabase = await db();
-    const { error } = await supabase.from("posts").delete().eq("id", id);
-    if (error) throw error;
-  },
-  async toggleReaction(id, delta) {
-    const supabase = await db();
-    const { data, error } = await supabase.rpc("increment_post_reaction", {
-      p_post_id: id,
-      p_delta: delta,
-    });
-    if (error) throw error;
-    return Number(data ?? 0);
-  },
-};
-
 async function buildCourseWithContent(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   supabase: any,
@@ -671,6 +602,30 @@ const academy: AcademyRepository = {
       if (lesson) return { course: full, lesson };
     }
     return null;
+  },
+  async getCompletedLessonIds(userId) {
+    const supabase = await db();
+    const { data, error } = await supabase
+      .from("lesson_progress")
+      .select("lesson_id")
+      .eq("user_id", userId)
+      .eq("completed", true);
+    if (error) throw error;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return (data ?? []).map((r: any) => r.lesson_id as string);
+  },
+  async markLessonComplete(userId, lessonId) {
+    const supabase = await db();
+    const { error } = await supabase.from("lesson_progress").upsert(
+      {
+        user_id: userId,
+        lesson_id: lessonId,
+        completed: true,
+        completed_at: new Date().toISOString(),
+      },
+      { onConflict: "user_id,lesson_id" },
+    );
+    if (error) throw error;
   },
   // --- Admin ---
   async listCoursesAdmin(businessId) {
@@ -875,6 +830,7 @@ const duplication: DuplicationRepository = {
         base_text: input.baseText.trim(),
         default_tone: input.defaultTone,
         compliance_hint: input.complianceHint.trim(),
+        system_prompt: input.systemPrompt.trim(),
       })
       .select("*")
       .single();
@@ -890,6 +846,7 @@ const duplication: DuplicationRepository = {
     if (patch.baseText !== undefined) row.base_text = patch.baseText;
     if (patch.defaultTone !== undefined) row.default_tone = patch.defaultTone;
     if (patch.complianceHint !== undefined) row.compliance_hint = patch.complianceHint;
+    if (patch.systemPrompt !== undefined) row.system_prompt = patch.systemPrompt;
     const { data, error } = await supabase
       .from("message_templates")
       .update(row)
@@ -1085,7 +1042,6 @@ const activity: ActivityRepository = {
       conversation_used: 0,
       message_generated: 0,
       learning_logged: 0,
-      post_created: 0,
     } as Record<ActivityKind, number>;
     let totalPoints = 0;
     let weekCount = 0;
@@ -1190,10 +1146,126 @@ const audiobooks: AudiobookRepository = {
   },
 };
 
+const usage: UsageRepository = {
+  async listForWindow(businessId, sinceISO) {
+    const supabase = await db();
+    const { data, error } = await supabase
+      .from("ai_usage")
+      .select("user_id, endpoint, cost_pen, created_at")
+      .eq("business_id", businessId)
+      .gte("created_at", sinceISO)
+      .order("created_at", { ascending: true });
+    if (error) throw error;
+    return (data ?? []).map((r) => ({
+      userId: r.user_id as string,
+      endpoint: (r.endpoint as string) ?? "message",
+      costPen: Number(r.cost_pen ?? 0),
+      createdAt: r.created_at as string,
+    }));
+  },
+  async overridesForMonth(businessId, monthKey) {
+    const supabase = await db();
+    const { data, error } = await supabase
+      .from("ai_limit_overrides")
+      .select("user_id, limit_pen")
+      .eq("business_id", businessId)
+      .eq("year_month", monthKey);
+    if (error) throw error;
+    const map: Record<string, number> = {};
+    for (const r of data ?? []) map[r.user_id as string] = Number(r.limit_pen ?? 0);
+    return map;
+  },
+  async setLimitOverride({ businessId, userId, monthKey, limitPen, updatedBy }) {
+    const supabase = await db();
+    const { error } = await supabase.from("ai_limit_overrides").upsert(
+      {
+        business_id: businessId,
+        user_id: userId,
+        year_month: monthKey,
+        limit_pen: limitPen,
+        updated_by: updatedBy,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "business_id,user_id,year_month" },
+    );
+    if (error) throw error;
+  },
+};
+
+const subscriptions: SubscriptionRepository = {
+  async recordPayment({
+    memberId,
+    businessId,
+    amountPen,
+    periodEnd,
+    recordedBy,
+    note,
+  }: RecordPaymentInput) {
+    const supabase = await db();
+    const { data: profile, error: upErr } = await supabase
+      .from("profiles")
+      .update({
+        subscription_expires_at: periodEnd,
+        subscription_reminder_sent_at: null,
+      })
+      .eq("id", memberId)
+      .select("*")
+      .single();
+    if (upErr) throw upErr;
+    const { error: payErr } = await supabase.from("subscription_payments").insert({
+      member_id: memberId,
+      business_id: businessId,
+      amount_pen: amountPen,
+      period_end: periodEnd,
+      recorded_by: recordedBy,
+      note: note ?? null,
+    });
+    if (payErr) throw payErr;
+    return mapProfile(profile);
+  },
+  async getExpirySummaryByBusiness() {
+    const supabase = await db();
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("business_id, subscription_expires_at")
+      .eq("role", "member");
+    if (error) throw error;
+    const now = new Date();
+    const summary: Record<string, BusinessExpirySummary> = {};
+    for (const row of data ?? []) {
+      const businessId = (row.business_id as string | null) ?? null;
+      if (!businessId) continue;
+      let bucket = summary[businessId];
+      if (!bucket) {
+        bucket = { expired: 0, expiringSoon: 0, active: 0, total: 0 };
+        summary[businessId] = bucket;
+      }
+      bucket.total += 1;
+      const state = getSubscriptionState(
+        (row.subscription_expires_at as string | null) ?? null,
+        now,
+      );
+      if (state === "expired") bucket.expired += 1;
+      else if (state === "expiring_soon") bucket.expiringSoon += 1;
+      else if (state === "active") bucket.active += 1;
+    }
+    return summary;
+  },
+  async listPayments(memberId: string) {
+    const supabase = await db();
+    const { data, error } = await supabase
+      .from("subscription_payments")
+      .select("*")
+      .eq("member_id", memberId)
+      .order("paid_at", { ascending: false });
+    if (error) throw error;
+    return (data ?? []).map(mapSubscriptionPayment);
+  },
+};
+
 export const supabaseRepositories: Repositories = {
   businesses,
   users,
-  feed,
   academy,
   duplication,
   audiobooks,
@@ -1201,4 +1273,6 @@ export const supabaseRepositories: Repositories = {
   interactions,
   learnings,
   activity,
+  usage,
+  subscriptions,
 };

@@ -4,7 +4,6 @@ import {
   Headphones,
   Home,
   MessageCircle,
-  Newspaper,
   ShieldCheck,
   Users,
   type LucideIcon,
@@ -54,7 +53,6 @@ export const NAV_ITEMS: NavItem[] = [
 ];
 
 export const SECONDARY_NAV_ITEMS: NavItem[] = [
-  { label: "Novedades", href: ROUTES.feed, icon: Newspaper, match: "/feed" },
   {
     label: "Recordatorios",
     href: ROUTES.constancia,

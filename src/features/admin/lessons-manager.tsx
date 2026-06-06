@@ -20,7 +20,7 @@ import {
   type Lesson,
   type LessonType,
 } from "@/data/types";
-import { adminBusinessPath } from "@/lib/constants";
+import { academyBasePath } from "@/lib/constants";
 import { minutesLabel } from "@/lib/format";
 import { LEVEL_BADGE } from "@/features/academy/level-meta";
 import { ManagerCard, ManagerHeader } from "./admin-ui";
@@ -49,7 +49,7 @@ export function LessonsManager({
   return (
     <ManagerCard>
       <Link
-        href={adminBusinessPath(businessId, "academia")}
+        href={academyBasePath(businessId)}
         className="inline-flex items-center gap-1.5 text-base font-medium text-muted-foreground transition-colors hover:text-foreground"
       >
         <ArrowLeft className="size-4" aria-hidden />
@@ -59,7 +59,7 @@ export function LessonsManager({
       <ManagerHeader
         icon={ListVideo}
         title={course.title}
-        description="Agrega lecciones en video, texto o PDF. El orden de la lista es el orden del curso."
+        description="Agrega las lecciones en video. El orden de la lista es el orden del curso."
         action={
           <Button onClick={() => setCreating(true)}>
             <Plus className="size-5" aria-hidden />

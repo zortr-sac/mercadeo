@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Poppins } from "next/font/google";
 import "./globals.css";
+import "@/styles/netscale.css";
 import { Providers } from "@/components/providers";
 import { APP } from "@/lib/constants";
 

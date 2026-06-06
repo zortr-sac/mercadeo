@@ -128,52 +128,8 @@ export const SEED_SCRIPTS: Script[] = [
   },
 ];
 
-export const SEED_MESSAGE_TEMPLATES: MessageTemplate[] = [
-  {
-    id: "mt-first",
-    businessId: null,
-    title: "Primer mensaje personalizado",
-    category: "prospecting",
-    situation: "Cuando quieres iniciar una conversacion sin invadir.",
-    baseText:
-      "Saluda por nombre, menciona el contexto del prospecto, ofrece enviar informacion breve y deja libertad para responder.",
-    defaultTone: "warm",
-    complianceHint: "No menciones ingresos, bonos ni resultados garantizados.",
-  },
-  {
-    id: "mt-objection",
-    businessId: null,
-    title: "Responder objecion",
-    category: "objection",
-    situation: "Cuando el prospecto dice que no tiene tiempo, dinero o desconfia.",
-    baseText:
-      "Valida la objecion, responde con calma, ofrece informacion oficial y pregunta si desea revisar un recurso corto.",
-    defaultTone: "calm",
-    complianceHint: "No presiones ni uses urgencia artificial.",
-  },
-  {
-    id: "mt-followup",
-    businessId: null,
-    title: "Seguimiento amable",
-    category: "followup",
-    situation: "Cuando ya compartiste informacion y toca consultar dudas.",
-    baseText:
-      "Pregunta si pudo revisar la informacion, invita a responder dudas y propone un siguiente paso simple.",
-    defaultTone: "direct",
-    complianceHint: "No uses frases como 'ultima oportunidad' o 'te vas a arrepentir'.",
-  },
-  {
-    id: "mt-reactivation",
-    businessId: null,
-    title: "Reactivar sin incomodar",
-    category: "reactivation",
-    situation: "Cuando una conversacion quedo fria.",
-    baseText:
-      "Retoma con respeto, reconoce que quiza no era el momento y ofrece un resumen actualizado.",
-    defaultTone: "reactivation",
-    complianceHint: "Da salida facil: si no desea continuar, esta bien.",
-  },
-];
+// Mensajes 100% por negocio: el contenido base se retiró. Cada negocio crea los suyos.
+export const SEED_MESSAGE_TEMPLATES: MessageTemplate[] = [];
 
 export const SEED_RESOURCES: Resource[] = [
   {

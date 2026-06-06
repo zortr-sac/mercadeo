@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { checkCompliance, makeSafeAlternative } from "@/lib/ai/compliance";
 import { generateWithGemini } from "@/lib/ai/gemini";
+import { assertWithinBudget, recordAiUsage } from "@/lib/ai/usage";
 import { LEGAL_DISCLAIMERS } from "@/lib/constants";
 import { requireSession } from "@/lib/session";
 
@@ -53,7 +54,7 @@ function gate(raw: string) {
 }
 
 export async function POST(request: Request) {
-  await requireSession();
+  const user = await requireSession();
   const json = await request.json().catch(() => null);
   const parsed = requestSchema.safeParse(json);
   if (!parsed.success) {
@@ -61,6 +62,12 @@ export async function POST(request: Request) {
   }
 
   const input = parsed.data;
+
+  const budget = await assertWithinBudget(user.businessId, user.id);
+  if (!budget.ok) {
+    return NextResponse.json({ error: "ai_limit" }, { status: 429 });
+  }
+
   const generated = await generateWithGemini({
     system: SYSTEM_PROMPT,
     prompt: `El cliente respondio o reacciono asi: "${input.situation}". Genera el JSON con reencuadre y mensaje.`,
@@ -82,6 +89,15 @@ export async function POST(request: Request) {
       disclaimer: LEGAL_DISCLAIMERS.ai,
     });
   }
+
+  await recordAiUsage({
+    businessId: user.businessId,
+    userId: user.id,
+    endpoint: "reframe",
+    model: generated.model,
+    usage: generated.usage,
+    idempotencyKey: input.idempotencyKey,
+  });
 
   const data = parseLoose(generated.text);
   const reframe =

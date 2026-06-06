@@ -8,7 +8,7 @@ export default function PrivacidadPage() {
     <LegalPage
       title="Política de Privacidad"
       updated="junio 2026"
-      intro="En Nexo Mentor cuidamos tus datos. Esta política explica qué información recogemos, para qué la usamos y qué derechos tienes, conforme a la Ley N.° 29733 de Protección de Datos Personales del Perú."
+      intro="En NetScale cuidamos tus datos. Esta política explica qué información recogemos, para qué la usamos y qué derechos tienes, conforme a la Ley N.° 29733 de Protección de Datos Personales del Perú."
       sections={[
         {
           heading: "1. Qué datos recogemos",

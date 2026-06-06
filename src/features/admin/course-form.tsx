@@ -35,7 +35,6 @@ export function CourseForm({
   const [title, setTitle] = useState(course?.title ?? "");
   const [description, setDescription] = useState(course?.description ?? "");
   const [level, setLevel] = useState<CourseLevel>(course?.level ?? "beginner");
-  const [category, setCategory] = useState(course?.category ?? "General");
   const [estimatedMinutes, setEstimatedMinutes] = useState(
     String(course?.estimatedMinutes ?? 30),
   );
@@ -51,7 +50,8 @@ export function CourseForm({
       title: title.trim(),
       description: description.trim(),
       level,
-      category: category.trim() || "General",
+      // La Academia ya no se agrupa por bloques: el curso es la unidad.
+      category: course?.category ?? "general",
       estimatedMinutes: Math.max(0, Number(estimatedMinutes) || 0),
       isPublished,
     };
@@ -119,29 +119,19 @@ export function CourseForm({
             placeholder="¿Qué aprenderá la persona en este curso?"
           />
         </Field>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Nivel" htmlFor="c-level">
-            <Select
-              id="c-level"
-              value={level}
-              onChange={(event) => setLevel(event.target.value as CourseLevel)}
-            >
-              {Object.entries(COURSE_LEVEL_LABELS).map(([value, label]) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
-              ))}
-            </Select>
-          </Field>
-          <Field label="Categoría" htmlFor="c-category">
-            <Input
-              id="c-category"
-              value={category}
-              onChange={(event) => setCategory(event.target.value)}
-              placeholder="Ej. Producto"
-            />
-          </Field>
-        </div>
+        <Field label="Nivel" htmlFor="c-level">
+          <Select
+            id="c-level"
+            value={level}
+            onChange={(event) => setLevel(event.target.value as CourseLevel)}
+          >
+            {Object.entries(COURSE_LEVEL_LABELS).map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </Select>
+        </Field>
         <Field
           label="Duración estimada (minutos)"
           htmlFor="c-minutes"

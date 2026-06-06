@@ -59,38 +59,26 @@ export interface Profile {
   rank: string | null;
   isActive: boolean;
   joinedAt: string;
+  /** Vencimiento de la suscripción mensual del cliente. null = sin suscripción (líderes/admin). */
+  subscriptionExpiresAt: string | null;
+  /** Última vez que se envió el push de recordatorio de vencimiento (anti-reenvío). */
+  subscriptionReminderSentAt?: string | null;
 }
 
-/* ============================ Feed ============================ */
+/* ============================ Suscripciones ============================ */
 
-export const POST_TYPES = {
-  ANNOUNCEMENT: "announcement",
-  MOTIVATION: "motivation",
-  EVENT: "event",
-  RECOGNITION: "recognition",
-} as const;
+/** Estado derivado de la suscripción (calculado desde subscriptionExpiresAt; no se almacena). */
+export type SubscriptionState = "active" | "expiring_soon" | "expired" | "none";
 
-export type PostType = (typeof POST_TYPES)[keyof typeof POST_TYPES];
-
-export const POST_TYPE_LABELS: Record<PostType, string> = {
-  announcement: "Anuncio",
-  motivation: "Constancia",
-  event: "Evento",
-  recognition: "Reconocimiento",
-};
-
-export interface Post {
+export interface SubscriptionPayment {
   id: string;
+  memberId: string;
   businessId: string | null;
-  type: PostType;
-  title: string;
-  body: string;
-  authorId: string;
-  coverUrl: string | null;
-  pinned: boolean;
-  eventDate: string | null;
-  eventLocation: string | null;
-  reactions: number;
+  amountPen: number;
+  paidAt: string;
+  periodEnd: string;
+  recordedBy: string | null;
+  note: string | null;
   createdAt: string;
 }
 
@@ -397,8 +385,7 @@ export type ActivityKind =
   | "prospect_added"
   | "conversation_used"
   | "message_generated"
-  | "learning_logged"
-  | "post_created";
+  | "learning_logged";
 
 export const ACTIVITY_KIND_LABELS: Record<ActivityKind, string> = {
   lesson_completed: "Lección completada",
@@ -406,7 +393,6 @@ export const ACTIVITY_KIND_LABELS: Record<ActivityKind, string> = {
   conversation_used: "Conversación atendida",
   message_generated: "Mensaje preparado",
   learning_logged: "Aprendizaje registrado",
-  post_created: "Publicación creada",
 };
 
 /** Puntos por actividad (solo esfuerzo/constancia, no dinero). */
@@ -416,7 +402,6 @@ export const ACTIVITY_POINTS: Record<ActivityKind, number> = {
   conversation_used: 5,
   message_generated: 3,
   learning_logged: 8,
-  post_created: 5,
 };
 
 export interface ActivityEvent {
@@ -449,6 +434,8 @@ export interface MessageTemplate {
   baseText: string;
   defaultTone: MessageTone;
   complianceHint: string;
+  /** Instrucciones del admin para la IA: cómo debe responder este mensaje. */
+  systemPrompt: string;
 }
 
 export interface ComplianceIssue {

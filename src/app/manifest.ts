@@ -3,7 +3,7 @@ import { APP } from "@/lib/constants";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: `${APP.fullName} - Academia, CRM y copiloto IA`,
+    name: `${APP.fullName} - Tu negocio, paso a paso`,
     short_name: APP.shortName,
     description: APP.description,
     id: "/",
@@ -11,7 +11,7 @@ export default function manifest(): MetadataRoute.Manifest {
     scope: "/",
     display: "standalone",
     orientation: "portrait",
-    background_color: "#f6f8f7",
+    background_color: "#F8FAFC",
     theme_color: APP.themeColor,
     lang: "es",
     dir: "ltr",
@@ -20,13 +20,13 @@ export default function manifest(): MetadataRoute.Manifest {
       {
         name: "Nuevo mensaje",
         short_name: "Mensaje",
-        url: "/mensajes",
+        url: "/vender/mensajes",
         icons: [{ src: "/icons/icon-192.png", sizes: "192x192" }],
       },
       {
         name: "Prospectos",
         short_name: "CRM",
-        url: "/duplicacion/prospectos",
+        url: "/vender/prospectos",
         icons: [{ src: "/icons/icon-192.png", sizes: "192x192" }],
       },
     ],

@@ -4,12 +4,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   BookOpen,
+  CreditCard,
   Headphones,
   LayoutDashboard,
   MessageCircle,
-  Newspaper,
   Settings,
   Users,
+  Wallet,
   type LucideIcon,
 } from "lucide-react";
 import {
@@ -24,9 +25,10 @@ const TAB_ICONS: Record<AdminTab, LucideIcon> = {
   resumen: LayoutDashboard,
   academia: BookOpen,
   audiolibros: Headphones,
-  novedades: Newspaper,
   mensajes: MessageCircle,
   lideres: Users,
+  consumo: Wallet,
+  suscripciones: CreditCard,
   ajustes: Settings,
 };
 
@@ -34,8 +36,18 @@ const TAB_ICONS: Record<AdminTab, LucideIcon> = {
  * Rail de pestañas del hub de administración. Resalta la pestaña activa según
  * `usePathname`. Desplazable en móvil; lenguaje claramente administrativo.
  */
-export function AdminTabs({ businessId }: { businessId: string }) {
+export function AdminTabs({
+  businessId,
+  isPlatformAdmin,
+}: {
+  businessId: string;
+  isPlatformAdmin: boolean;
+}) {
   const pathname = usePathname();
+  // La gestión de suscripciones es exclusiva del admin de plataforma.
+  const tabs = ADMIN_TABS.filter(
+    (tab) => tab !== "suscripciones" || isPlatformAdmin,
+  );
 
   return (
     <nav
@@ -43,7 +55,7 @@ export function AdminTabs({ businessId }: { businessId: string }) {
       className="-mx-1 overflow-x-auto"
     >
       <div className="flex min-w-max gap-1 px-1">
-        {ADMIN_TABS.map((tab) => {
+        {tabs.map((tab) => {
           const href = adminBusinessPath(businessId, tab);
           const active =
             pathname === href || pathname.startsWith(`${href}/`);

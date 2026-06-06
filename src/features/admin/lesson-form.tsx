@@ -5,24 +5,17 @@ import { Trash2 } from "lucide-react";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Field, Input, Select, Textarea } from "@/components/ui/field";
+import { Field, Input } from "@/components/ui/field";
 import { FileUpload } from "@/components/ui/file-upload";
 import { Modal } from "@/components/ui/modal";
-import {
-  LESSON_TYPE_LABELS,
-  type Lesson,
-  type LessonType,
-} from "@/data/types";
+import type { Lesson } from "@/data/types";
 import {
   createLessonAction,
   removeLessonAction,
   updateLessonAction,
 } from "./academy-actions";
 
-// Solo ofrecemos los tipos con flujo de creación claro para 50+.
-const LESSON_TYPE_OPTIONS: LessonType[] = ["video", "article", "pdf"];
-
-/** Modal para crear o editar una lección (video subido, texto o PDF). */
+/** Modal para crear o editar una lección en video (subido directo a la nube). */
 export function LessonForm({
   businessId,
   courseId,
@@ -39,59 +32,40 @@ export function LessonForm({
   const [pending, startTransition] = useTransition();
 
   const [title, setTitle] = useState(lesson?.title ?? "");
-  const [contentType, setContentType] = useState<LessonType>(
-    lesson?.contentType ?? "video",
-  );
-  const [content, setContent] = useState(lesson?.content ?? "");
   // Media subida (URL pública de Storage) + duración detectada en el navegador.
   const [videoUrl, setVideoUrl] = useState(lesson?.videoUrl ?? "");
-  const [resourceUrl, setResourceUrl] = useState(lesson?.resourceUrl ?? "");
   const [durationMinutes, setDurationMinutes] = useState(
     lesson?.durationMinutes ?? 0,
   );
 
-  function validate(): boolean {
-    if (title.trim().length < 3) {
-      toast.error("Escribe un título para la lección.");
-      return false;
-    }
-    if (contentType === "video" && !videoUrl) {
-      toast.error("Sube el video de la lección.");
-      return false;
-    }
-    if (contentType === "article" && content.trim().length < 5) {
-      toast.error("Escribe el texto de la lección.");
-      return false;
-    }
-    if (contentType === "pdf" && !resourceUrl) {
-      toast.error("Sube el PDF de la lección.");
-      return false;
-    }
-    return true;
-  }
-
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
-    if (!validate()) return;
+    if (title.trim().length < 3) {
+      toast.error("Escribe un título para la lección.");
+      return;
+    }
+    if (!videoUrl) {
+      toast.error("Sube el video de la lección.");
+      return;
+    }
 
     startTransition(async () => {
       try {
         if (isEdit && lesson) {
           await updateLessonAction(businessId, lesson.id, {
             title: title.trim(),
-            contentType,
-            videoUrl: contentType === "video" ? videoUrl : null,
-            content: contentType === "article" ? content.trim() : null,
-            resourceUrl: contentType === "pdf" ? resourceUrl : null,
+            contentType: "video",
+            videoUrl,
+            content: null,
+            resourceUrl: null,
             durationMinutes,
           });
           toast.success("Lección actualizada.");
         } else {
           await createLessonAction(businessId, courseId, {
             title: title.trim(),
-            contentType,
-            videoUrl: contentType === "video" ? videoUrl : null,
-            content: contentType === "article" ? content.trim() : null,
+            contentType: "video",
+            videoUrl,
             durationMinutes,
           });
           toast.success("Lección creada.");
@@ -130,7 +104,7 @@ export function LessonForm({
       open
       onClose={onClose}
       title={isEdit ? "Editar lección" : "Nueva lección"}
-      description="Elige el tipo de contenido y súbelo. El video se guarda directo en la nube."
+      description="Sube el video de la lección. Se guarda directo en la nube."
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         <Field label="Título de la lección" htmlFor="l-title">
@@ -143,74 +117,23 @@ export function LessonForm({
           />
         </Field>
 
-        <Field label="Tipo de contenido" htmlFor="l-type">
-          <Select
-            id="l-type"
-            value={contentType}
-            onChange={(event) =>
-              setContentType(event.target.value as LessonType)
-            }
-          >
-            {LESSON_TYPE_OPTIONS.map((value) => (
-              <option key={value} value={value}>
-                {LESSON_TYPE_LABELS[value]}
-              </option>
-            ))}
-          </Select>
+        <Field label="Video de la lección" htmlFor="l-video">
+          <FileUpload
+            businessId={businessId}
+            folder="academia"
+            accept="video"
+            currentUrl={videoUrl || null}
+            label="Subir video (mp4, webm o mov)"
+            onUploaded={({ url, durationSeconds }) => {
+              setVideoUrl(url);
+              if (url) {
+                setDurationMinutes(Math.max(1, Math.round(durationSeconds / 60)));
+              } else {
+                setDurationMinutes(0);
+              }
+            }}
+          />
         </Field>
-
-        {contentType === "video" && (
-          <Field label="Video de la lección" htmlFor="l-video">
-            <FileUpload
-              businessId={businessId}
-              folder="academia"
-              accept="video"
-              currentUrl={videoUrl || null}
-              label="Subir video (mp4, webm o mov)"
-              onUploaded={({ url, durationSeconds }) => {
-                setVideoUrl(url);
-                if (url) {
-                  setDurationMinutes(Math.max(1, Math.round(durationSeconds / 60)));
-                } else {
-                  setDurationMinutes(0);
-                }
-              }}
-            />
-          </Field>
-        )}
-
-        {contentType === "article" && (
-          <Field
-            label="Texto de la lección"
-            htmlFor="l-content"
-            hint="Puedes usar formato Markdown (títulos, listas, negritas)."
-          >
-            <Textarea
-              id="l-content"
-              value={content}
-              onChange={(event) => setContent(event.target.value)}
-              rows={8}
-              className="min-h-40 text-lg leading-relaxed"
-              placeholder="Escribe el contenido de la lección…"
-            />
-          </Field>
-        )}
-
-        {contentType === "pdf" && (
-          <Field
-            label="Enlace al PDF"
-            htmlFor="l-pdf"
-            hint="Pega el enlace público del documento (por ejemplo, de Google Drive o tu nube)."
-          >
-            <Input
-              id="l-pdf"
-              type="url"
-              value={resourceUrl}
-              onChange={(event) => setResourceUrl(event.target.value)}
-              placeholder="https://…"
-            />
-          </Field>
-        )}
 
         <div className="flex items-center justify-between gap-2 pt-2">
           {isEdit ? (

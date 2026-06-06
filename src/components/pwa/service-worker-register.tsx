@@ -8,8 +8,25 @@ export function ServiceWorkerRegister() {
       return;
     }
 
-    const isLocalhost = ["localhost", "127.0.0.1"].includes(window.location.hostname);
-    if (process.env.NODE_ENV !== "production" && !isLocalhost) return;
+    // En desarrollo el service worker cachea los chunks de Turbopack
+    // (stale-while-revalidate sobre /_next/static) y los sirve obsoletos tras
+    // cambiar el código, provocando errores de "module factory not available".
+    // Por eso SOLO lo activamos en producción (donde los chunks tienen hash
+    // inmutable). En dev desregistramos cualquier SW previo y limpiamos sus
+    // caches para que la app cargue siempre fresca.
+    if (process.env.NODE_ENV !== "production") {
+      navigator.serviceWorker
+        .getRegistrations()
+        .then((regs) => regs.forEach((reg) => reg.unregister()))
+        .catch(() => {});
+      if (typeof caches !== "undefined") {
+        caches
+          .keys()
+          .then((keys) => keys.forEach((key) => caches.delete(key)))
+          .catch(() => {});
+      }
+      return;
+    }
 
     const register = () => {
       navigator.serviceWorker.register("/sw.js").catch(() => {

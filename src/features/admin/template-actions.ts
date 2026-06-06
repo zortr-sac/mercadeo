@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { getRepositories } from "@/data";
 import type { MessageTemplatePatch } from "@/data/repositories";
-import type { MessageTemplate, MessageTone, ScriptCategory } from "@/data/types";
+import type { MessageTemplate } from "@/data/types";
 import { adminBusinessPath } from "@/lib/constants";
 import { requireBusinessAdmin } from "@/lib/session";
 
@@ -13,19 +13,20 @@ function revalidate(businessId: string) {
 
 export async function createTemplateAction(
   businessId: string,
-  input: {
-    title: string;
-    category: ScriptCategory;
-    situation: string;
-    baseText: string;
-    defaultTone: MessageTone;
-    complianceHint: string;
-  },
+  input: { title: string; situation: string; systemPrompt: string; baseText: string },
 ): Promise<MessageTemplate> {
   await requireBusinessAdmin(businessId);
   const template = await getRepositories().duplication.createMessageTemplate({
     businessId,
-    ...input,
+    title: input.title,
+    // `situation` = descripción breve que ve el miembro.
+    situation: input.situation,
+    systemPrompt: input.systemPrompt,
+    baseText: input.baseText,
+    // Campos heredados (los usa el copiloto de prospectos); valores neutrales por defecto.
+    category: "prospecting",
+    defaultTone: "warm",
+    complianceHint: "",
   });
   revalidate(businessId);
   return template;

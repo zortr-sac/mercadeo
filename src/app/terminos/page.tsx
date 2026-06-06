@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { LegalPage } from "@/features/legal/legal-page";
+import { PAYMENT } from "@/lib/constants";
 
 export const metadata: Metadata = { title: "Términos y Condiciones" };
 
@@ -8,19 +9,19 @@ export default function TerminosPage() {
     <LegalPage
       title="Términos y Condiciones"
       updated="junio 2026"
-      intro="Estos Términos regulan el uso de Nexo Mentor, una plataforma de formación y herramientas por suscripción. Al crear una cuenta y aceptar estos Términos con un clic, confirmas que los has leído y que estás de acuerdo."
+      intro="Estos Términos regulan el uso de NetScale, una plataforma de formación y herramientas por suscripción. Al crear una cuenta y aceptar estos Términos con un clic, confirmas que los has leído y que estás de acuerdo."
       sections={[
         {
           heading: "1. Identificación y aceptación",
           paragraphs: [
-            "El servicio es prestado por el titular de Nexo Mentor (datos de razón social, RUC y contacto disponibles a solicitud). El uso de la plataforma implica la aceptación plena de estos Términos, manifestada con el clic de aceptación durante el registro.",
+            "El servicio es prestado por el titular de NetScale (datos de razón social, RUC y contacto disponibles a solicitud). El uso de la plataforma implica la aceptación plena de estos Términos, manifestada con el clic de aceptación durante el registro.",
             "Debes ser mayor de edad para registrarte y usar el servicio.",
           ],
         },
         {
           heading: "2. Descripción del servicio",
           paragraphs: [
-            "Nexo Mentor es un servicio de formación (academia, tutoriales) y herramientas de organización y comunicación para vendedores, por suscripción.",
+            "NetScale es un servicio de formación (academia, tutoriales) y herramientas de organización y comunicación para vendedores, por suscripción.",
           ],
           bullets: [
             "NO es una oportunidad de negocio, inversión ni programa de afiliación.",
@@ -31,7 +32,7 @@ export default function TerminosPage() {
         {
           heading: "3. Suscripción, precios y pagos",
           paragraphs: [
-            "La suscripción es mensual, de monto fijo (15 soles), y da acceso al contenido y a las herramientas. Puede renovarse de forma periódica.",
+            `La suscripción es mensual, de monto fijo (${PAYMENT.pricePen} soles), y da acceso al contenido y a las herramientas. Puede renovarse de forma periódica.`,
             "Podemos modificar el precio con aviso previo. La política de cancelación y, si aplica, de reembolsos, se informa en la plataforma.",
           ],
         },

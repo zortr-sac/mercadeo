@@ -1,4 +1,4 @@
-const VERSION = "nexo-v1";
+const VERSION = "netscale-v2";
 const STATIC_CACHE = `${VERSION}-static`;
 const PAGES_CACHE = `${VERSION}-pages`;
 const OFFLINE_URL = "/offline";
@@ -78,7 +78,7 @@ self.addEventListener("push", (event) => {
   let payload = {
     title: "Seguimiento pendiente",
     body: "Tienes una conversacion que revisar hoy.",
-    url: "/duplicacion/prospectos",
+    url: "/vender/prospectos",
   };
 
   if (event.data) {
@@ -108,7 +108,7 @@ self.addEventListener("push", (event) => {
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
   const url =
-    event.action === "messages" ? "/mensajes" : event.notification.data?.url || "/";
+    event.action === "messages" ? "/vender/mensajes" : event.notification.data?.url || "/";
 
   event.waitUntil(
     clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientsList) => {

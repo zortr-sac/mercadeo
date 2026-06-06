@@ -1,29 +1,44 @@
-import { Header } from "@/components/layout/header";
-import { Sidebar } from "@/components/layout/sidebar";
-import { BottomNav } from "@/components/layout/bottom-nav";
+import { redirect } from "next/navigation";
 import { SessionProvider } from "@/components/session-provider";
 import { InstallPrompt } from "@/components/pwa/install-prompt";
+import { OfflineBootstrap } from "@/components/offline/offline-bootstrap";
+import { AiLimitModal } from "@/features/ai/ai-limit-modal";
+import { NetScaleShell } from "@/components/netscale/shell";
+import { PreviewBar } from "@/components/netscale/preview-bar";
 import { requireSession } from "@/lib/session";
+import { getEffectiveBusiness } from "@/lib/active-business";
+import { isExpired } from "@/lib/subscription";
+import { ROUTES } from "@/lib/constants";
 
-/** Layout del área autenticada: shell con sidebar (desktop) y bottom nav (móvil). */
+/** NetScale client shell: mobile-first column + bottom nav. */
 export default async function AppLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   const user = await requireSession();
+  const { preview } = await getEffectiveBusiness(user);
+
+  // A platform admin doesn't use the client app directly: unless they are
+  // previewing a business "as a member", send them to their dashboard.
+  if (user.role === "admin" && !preview) {
+    redirect(ROUTES.admin);
+  }
+
+  // Cliente (member) con suscripción vencida → pantalla de suspensión por impago.
+  // Líderes y admin de plataforma no tienen suscripción, así que nunca se bloquean.
+  if (user.role === "member" && isExpired(user.subscriptionExpiresAt)) {
+    redirect(ROUTES.suspendido);
+  }
 
   return (
     <SessionProvider user={user}>
-      <div className="flex min-h-dvh">
-        <Sidebar />
-        <div className="flex min-w-0 flex-1 flex-col">
-          <Header />
-          <main className="flex-1 pb-24 lg:pb-8">{children}</main>
-        </div>
-      </div>
-      <BottomNav />
+      <NetScaleShell topBar={preview ? <PreviewBar businessName={preview.name} /> : undefined}>
+        {children}
+      </NetScaleShell>
       <InstallPrompt />
+      <OfflineBootstrap />
+      <AiLimitModal />
     </SessionProvider>
   );
 }

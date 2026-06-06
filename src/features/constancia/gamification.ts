@@ -4,7 +4,6 @@ import {
   type ActivityStats,
 } from "@/data/types";
 import {
-  Award,
   BookOpenCheck,
   CalendarCheck,
   Flame,
@@ -35,7 +34,6 @@ const KIND_ICON: Record<ActivityKind, LucideIcon> = {
   conversation_used: MessagesSquare,
   message_generated: MessagesSquare,
   learning_logged: Sprout,
-  post_created: Award,
 };
 
 /**

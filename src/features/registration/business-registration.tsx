@@ -1,53 +1,44 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import {
-  ArrowRight,
-  Bell,
-  Bot,
-  CheckCircle2,
-  Copy,
-  GraduationCap,
-  Headphones,
-  Image as ImageIcon,
-  MessageCircle,
-  MessagesSquare,
-  Newspaper,
-  RefreshCw,
-  ShieldCheck,
-  Smartphone,
-  Sparkles,
-  Users,
-} from "lucide-react";
+import { useState } from "react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Field, Input } from "@/components/ui/field";
+import {
+  Btn,
+  Card,
+  Chip,
+  Field,
+  IconCircle,
+  Logo,
+  Note,
+  TextInput,
+  type Tone,
+} from "@/components/netscale/ui";
+import { Icon, type IconName } from "@/components/netscale/icons";
 import { LEGAL_DISCLAIMERS, PAYMENT } from "@/lib/constants";
 import type { Business } from "@/data/types";
 
 const YAPE_PLAIN = PAYMENT.yapeDisplay.replace(/\s/g, "");
 
 /** Todo lo que la persona obtiene dentro de la plataforma. */
-const INCLUDED_FEATURES = [
-  { icon: GraduationCap, title: "Academia completa", desc: "Cursos, videos y lecciones por nivel." },
-  { icon: Headphones, title: "Audiolibros", desc: "Aprende mientras haces otras cosas." },
-  { icon: Bot, title: "Asistente con IA", desc: "Redacta tus mensajes por ti." },
-  { icon: MessagesSquare, title: "Copiloto de chats", desc: "Pega una captura y te dice qué responder." },
-  { icon: ImageIcon, title: "Imágenes con IA", desc: "Materiales listos para compartir." },
-  { icon: Users, title: "CRM de prospectos", desc: "Haz seguimiento sin olvidar a nadie." },
-  { icon: Bell, title: "Recordatorios", desc: "Mantén tu ritmo todos los días." },
-  { icon: Newspaper, title: "Novedades", desc: "Anuncios y logros de tu negocio." },
-  { icon: Smartphone, title: "App en tu celular", desc: "Rápida y disponible sin internet." },
-  { icon: RefreshCw, title: "Mejoras constantes", desc: "Contenido nuevo, sin costo extra." },
-] as const;
+const INCLUDED_FEATURES: { icon: IconName; tone: Tone; title: string; desc: string }[] = [
+  { icon: "cap", tone: "blue", title: "Academia completa", desc: "Cursos y videos por nivel." },
+  { icon: "headphones", tone: "orange", title: "Audiolibros", desc: "Aprende mientras haces otras cosas." },
+  { icon: "sparkles", tone: "blue", title: "Asistente con IA", desc: "Redacta tus mensajes por ti." },
+  { icon: "chat", tone: "orange", title: "Copiloto de chats", desc: "Te dice qué responder." },
+  { icon: "image", tone: "blue", title: "Imágenes con IA", desc: "Materiales listos para compartir." },
+  { icon: "users", tone: "orange", title: "CRM de prospectos", desc: "No olvides a ningún cliente." },
+  { icon: "bell", tone: "blue", title: "Recordatorios", desc: "Mantén tu ritmo cada día." },
+  { icon: "download", tone: "orange", title: "App en tu celular", desc: "Rápida, hasta sin internet." },
+  { icon: "refresh", tone: "blue", title: "Mejoras constantes", desc: "Contenido nuevo, sin costo extra." },
+];
 
 /** Qué sostiene el aporte mensual (costos operativos de la plataforma). */
 const CONTRIBUTION_COVERS = [
-  "La inteligencia artificial que escribe tus mensajes y crea imágenes y videos.",
+  "La inteligencia artificial que escribe tus mensajes y crea imágenes.",
   "Los servidores, la seguridad y el soporte de tu cuenta.",
-  "El contenido, la información y los materiales que usas cada día.",
+  "El contenido y los materiales que usas cada día.",
   "Las mejoras y actualizaciones constantes de la plataforma.",
-] as const;
+];
 
 export function BusinessRegistration({
   initialBusiness,
@@ -57,20 +48,10 @@ export function BusinessRegistration({
 }) {
   const business = initialBusiness;
   const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [accepted, setAccepted] = useState(false);
   const [done, setDone] = useState(false);
   const [waUrl, setWaUrl] = useState("");
-
-  const style = useMemo(
-    () =>
-      ({
-        "--tenant-primary": business?.primaryColor ?? "#0f766e",
-        "--tenant-accent": business?.accentColor ?? "#f59e0b",
-      }) as React.CSSProperties,
-    [business],
-  );
 
   function buildWhatsappUrl(): string {
     const message = [
@@ -78,7 +59,6 @@ export function BusinessRegistration({
       "",
       "Mis datos:",
       `• Nombre: ${name.trim()}`,
-      `• Correo: ${email.trim()}`,
       `• WhatsApp: ${phone.trim()}`,
       "",
       `Voy a realizar mi aporte de S/ ${PAYMENT.pricePen} por Yape al ${PAYMENT.yapeDisplay} y enviaré mi comprobante. ¡Gracias!`,
@@ -90,10 +70,6 @@ export function BusinessRegistration({
     event.preventDefault();
     if (name.trim().length < 2) {
       toast.error("Escribe tu nombre completo.");
-      return;
-    }
-    if (!email.includes("@")) {
-      toast.error("Escribe un correo válido (ejemplo: nombre@correo.com).");
       return;
     }
     if (phone.trim().length < 6) {
@@ -121,323 +97,375 @@ export function BusinessRegistration({
 
   if (!business) {
     return (
-      <div className="mx-auto flex min-h-dvh max-w-2xl items-center px-4">
-        <div className="rounded-lg border border-border bg-card p-6">
-          <h1 className="font-display text-2xl font-semibold">
-            Link de registro no encontrado
-          </h1>
-          <p className="mt-2 text-muted-foreground">
-            Revisa que el link del negocio este escrito correctamente.
-          </p>
+      <div className="ns-shell">
+        <div className="ns-app" style={{ justifyContent: "center", padding: 24 }}>
+          <Card pad={24} style={{ textAlign: "center", margin: "auto" }}>
+            <div style={{ margin: "0 auto", width: 64 }}>
+              <IconCircle icon="help" tone="gray" size={64} />
+            </div>
+            <h1 style={{ fontSize: 22, marginTop: 14 }}>Link de registro no encontrado</h1>
+            <p style={{ fontSize: 17, color: "var(--text-2)", marginTop: 8 }}>
+              Revisa que el link del negocio esté escrito correctamente.
+            </p>
+          </Card>
         </div>
       </div>
     );
   }
 
+  const tenant = business.primaryColor || "var(--blue)";
+
   return (
-    <main className="min-h-dvh bg-background" style={style}>
-      {/* Hero */}
-      <header className="mx-auto max-w-6xl px-4 pt-10 sm:pt-14">
-        <div className="flex items-center gap-3">
-          <div
-            className="flex size-12 items-center justify-center rounded-xl font-display text-lg font-bold text-white"
-            style={{ background: "var(--tenant-primary)" }}
+    <div className="ns-shell">
+      <div className="ns-app ns-screen">
+        {/* Brand header del negocio */}
+        <header
+          style={{
+            padding: "calc(24px + var(--safe-top, 0px)) 20px 6px",
+            display: "flex",
+            alignItems: "center",
+            gap: 11,
+          }}
+        >
+          <span
+            style={{
+              width: 46,
+              height: 46,
+              borderRadius: 13,
+              background: tenant,
+              color: "#fff",
+              display: "grid",
+              placeItems: "center",
+              fontFamily: "var(--font-head)",
+              fontWeight: 700,
+              fontSize: 17,
+              overflow: "hidden",
+              flexShrink: 0,
+            }}
           >
             {business.logoUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={business.logoUrl} alt="" className="size-full rounded-xl object-cover" />
+              <img src={business.logoUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
             ) : (
               business.name.slice(0, 2).toUpperCase()
             )}
-          </div>
-          <span className="text-lg font-semibold" style={{ color: "var(--tenant-primary)" }}>
-            {business.name}
           </span>
-        </div>
-        <h1 className="mt-6 max-w-3xl font-display text-3xl font-bold leading-tight tracking-tight sm:text-4xl lg:text-5xl">
-          La herramienta que transformará tu forma de hacer redes de mercadeo
-        </h1>
-        <p className="mt-4 max-w-2xl text-lg leading-relaxed text-muted-foreground">
-          Todo lo que necesitas para aprender, organizarte y comunicarte mejor
-          con tus clientes, en un solo lugar y desde tu celular.
-        </p>
-      </header>
-
-      <section className="mx-auto grid max-w-6xl gap-8 px-4 py-10 lg:grid-cols-[1.05fr_1fr] lg:items-start lg:gap-12">
-        {/* Beneficios — debajo del formulario en móvil */}
-        <div className="order-2 space-y-6 lg:order-1">
-          <div>
-            <h2 className="font-display text-xl font-bold sm:text-2xl">
-              Todo lo que tendrás incluido
-            </h2>
-            <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              {INCLUDED_FEATURES.map(({ icon: Icon, title, desc }) => (
-                <div
-                  key={title}
-                  className="flex items-start gap-3 rounded-xl border border-border bg-card p-4"
-                >
-                  <span
-                    className="flex size-10 shrink-0 items-center justify-center rounded-lg"
-                    style={{ background: "color-mix(in srgb, var(--tenant-primary) 12%, transparent)" }}
-                  >
-                    <Icon className="size-5" style={{ color: "var(--tenant-primary)" }} />
-                  </span>
-                  <div className="min-w-0">
-                    <p className="font-semibold leading-tight">{title}</p>
-                    <p className="mt-0.5 text-sm leading-snug text-muted-foreground">{desc}</p>
-                  </div>
-                </div>
-              ))}
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontFamily: "var(--font-head)", fontWeight: 600, fontSize: 18, lineHeight: 1.1 }}>
+              {business.name}
             </div>
+            <div style={{ fontSize: 13, color: "var(--text-2)" }}>Plataforma NetScale</div>
           </div>
+        </header>
 
-          {/* Qué cubre el aporte */}
-          <div className="rounded-2xl border border-border bg-muted/50 p-5">
-            <h3 className="flex items-center gap-2 font-display text-lg font-bold">
-              <Sparkles className="size-5" style={{ color: "var(--tenant-primary)" }} />
-              Tu aporte de S/ {PAYMENT.pricePen} al mes
-            </h3>
-            <p className="mt-2 leading-relaxed text-muted-foreground">
-              No es un cobro por usar la plataforma: es lo que la mantiene viva y
-              al día. Tu aporte sostiene:
-            </p>
-            <ul className="mt-3 space-y-2">
-              {CONTRIBUTION_COVERS.map((item) => (
-                <li key={item} className="flex items-start gap-2.5 leading-snug">
-                  <CheckCircle2
-                    className="mt-0.5 size-5 shrink-0"
-                    style={{ color: "var(--tenant-primary)" }}
-                  />
-                  <span>{item}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
+        <div
+          className="ns-pad"
+          style={{ display: "flex", flexDirection: "column", gap: 20, paddingTop: 10, paddingBottom: 36 }}
+        >
+          {done ? (
+            <RegistrationDone businessName={business.name} waUrl={waUrl} />
+          ) : (
+            <>
+              {/* Hero */}
+              <div>
+                <Chip tone="blue" icon="sparkles">Desde tu celular</Chip>
+                <h1 style={{ fontSize: 27, lineHeight: 1.18, marginTop: 12 }}>
+                  La herramienta que transforma tu forma de hacer redes de mercadeo
+                </h1>
+                <p style={{ fontSize: 17, color: "var(--text-2)", marginTop: 10, lineHeight: 1.5 }}>
+                  Todo para aprender, organizarte y comunicarte mejor con tus clientes, en un solo lugar.
+                </p>
+              </div>
 
-          <div className="flex gap-3 rounded-xl border border-gold-200 bg-gold-50 p-4 text-sm text-gold-900">
-            <ShieldCheck className="mt-0.5 size-5 shrink-0" />
-            <p>{LEGAL_DISCLAIMERS.sales}</p>
-          </div>
-        </div>
-
-        {/* Registro — primero en móvil */}
-        <div className="order-1 lg:order-2 lg:sticky lg:top-8">
-          <div className="rounded-2xl border border-border bg-card p-6 shadow-xl sm:p-7">
-            {done ? (
-              <RegistrationDone businessName={business.name} waUrl={waUrl} />
-            ) : (
-              <form onSubmit={submit} className="space-y-6">
-                <header>
-                  <h2 className="font-display text-2xl font-bold sm:text-3xl">
-                    Crea tu cuenta
-                  </h2>
-                  <div className="mt-3 flex flex-wrap items-baseline gap-x-2 gap-y-1">
-                    <span className="text-4xl font-bold" style={{ color: "var(--tenant-primary)" }}>
+              {/* Formulario de registro */}
+              <Card pad={20} style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+                <div>
+                  <h2 style={{ fontSize: 23 }}>Crea tu cuenta</h2>
+                  <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginTop: 6, flexWrap: "wrap" }}>
+                    <span style={{ fontFamily: "var(--font-head)", fontWeight: 700, fontSize: 34, color: "var(--blue)" }}>
                       S/ {PAYMENT.pricePen}
                     </span>
-                    <span className="text-lg text-muted-foreground">al mes</span>
-                    <span className="w-full text-sm font-medium text-muted-foreground">
-                      Aporte de operación y mantenimiento
-                    </span>
+                    <span style={{ fontSize: 17, color: "var(--text-2)" }}>al mes</span>
                   </div>
-                </header>
-
-                {/* Paso 1 */}
-                <Step number={1} title="Escribe tus datos">
-                  <div className="space-y-3">
-                    <Field label="Nombre completo" htmlFor="signupName">
-                      <Input
-                        id="signupName"
-                        value={name}
-                        onChange={(event) => setName(event.target.value)}
-                        placeholder="Ej. Rosa Martínez"
-                        className="h-12 text-base"
-                        autoComplete="name"
-                      />
-                    </Field>
-                    <Field label="Correo" htmlFor="signupEmail">
-                      <Input
-                        id="signupEmail"
-                        type="email"
-                        value={email}
-                        onChange={(event) => setEmail(event.target.value)}
-                        placeholder="nombre@correo.com"
-                        className="h-12 text-base"
-                        autoComplete="email"
-                      />
-                    </Field>
-                    <Field label="Tu número de WhatsApp" htmlFor="signupPhone">
-                      <Input
-                        id="signupPhone"
-                        value={phone}
-                        onChange={(event) => setPhone(event.target.value)}
-                        placeholder="Ej. 987 654 321"
-                        className="h-12 text-base"
-                        inputMode="tel"
-                        autoComplete="tel"
-                      />
-                    </Field>
-                  </div>
-                </Step>
-
-                {/* Paso 2 */}
-                <Step number={2} title={`Paga S/ ${PAYMENT.pricePen} con Yape`}>
-                  <p className="text-muted-foreground">
-                    Abre tu app de Yape y envía el pago a este número:
+                  <p style={{ fontSize: 14, color: "var(--text-2)", marginTop: 2 }}>
+                    Aporte de operación y mantenimiento
                   </p>
-                  <div className="mt-3 flex items-center justify-between gap-3 rounded-xl border-2 border-dashed border-border bg-muted px-4 py-3">
-                    <div className="flex min-w-0 items-center gap-3">
-                      <Smartphone
-                        className="size-7 shrink-0"
-                        style={{ color: "var(--tenant-primary)" }}
-                      />
-                      <div className="min-w-0">
-                        <p className="truncate text-xl font-bold tracking-wide sm:text-2xl">
-                          {PAYMENT.yapeDisplay}
-                        </p>
-                        <p className="text-sm text-muted-foreground">Número para Yape</p>
-                      </div>
+                </div>
+
+                <form onSubmit={submit} style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+                  <Step n={1} title="Escribe tus datos">
+                    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                      <Field label="Nombre completo">
+                        <TextInput value={name} onChange={setName} placeholder="Ej. Rosa Martínez" />
+                      </Field>
+                      <Field label="Tu número de WhatsApp">
+                        <TextInput value={phone} onChange={setPhone} type="tel" placeholder="Ej. 987 654 321" />
+                      </Field>
                     </div>
-                    <button
-                      type="button"
-                      onClick={copyYape}
-                      className="flex shrink-0 items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-2 text-sm font-medium transition-colors hover:bg-muted"
+                  </Step>
+
+                  <Step n={2} title={`Paga S/ ${PAYMENT.pricePen} con Yape`}>
+                    <p style={{ fontSize: 16, color: "var(--text-2)" }}>
+                      Abre tu app de Yape y envía el pago a este número:
+                    </p>
+                    <div
+                      style={{
+                        marginTop: 10,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        gap: 10,
+                        border: "2px dashed var(--border-strong)",
+                        background: "var(--blue-soft)",
+                        borderRadius: 14,
+                        padding: "12px 14px",
+                      }}
                     >
-                      <Copy className="size-4" />
-                      Copiar
-                    </button>
-                  </div>
-                </Step>
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontFamily: "var(--font-head)", fontWeight: 700, fontSize: 22, letterSpacing: ".02em" }}>
+                          {PAYMENT.yapeDisplay}
+                        </div>
+                        <div style={{ fontSize: 13, color: "var(--text-2)" }}>Número para Yape</div>
+                      </div>
+                      <button
+                        type="button"
+                        className="ns-press"
+                        onClick={copyYape}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 6,
+                          background: "var(--surface)",
+                          border: "1px solid var(--border-strong)",
+                          borderRadius: 10,
+                          padding: "10px 13px",
+                          color: "var(--blue)",
+                          fontWeight: 600,
+                          fontSize: 15,
+                          flexShrink: 0,
+                        }}
+                      >
+                        <Icon name="copy" size={18} color="var(--blue)" />
+                        Copiar
+                      </button>
+                    </div>
+                  </Step>
 
-                {/* Paso 3 */}
-                <Step number={3} title="Envía tu comprobante por WhatsApp" last>
-                  <p className="text-muted-foreground">
-                    Toca el botón verde. Se abrirá WhatsApp con tus datos ya
-                    escritos: solo adjunta la captura de tu pago y envíalo.
+                  <Step n={3} title="Envía tu comprobante" last>
+                    <p style={{ fontSize: 16, color: "var(--text-2)" }}>
+                      Toca el botón verde: se abrirá WhatsApp con tus datos ya escritos. Solo adjunta la captura de tu
+                      pago y envíalo.
+                    </p>
+                  </Step>
+
+                  <label
+                    className="ns-press"
+                    style={{
+                      display: "flex",
+                      gap: 12,
+                      alignItems: "flex-start",
+                      border: "1px solid var(--border)",
+                      borderRadius: 14,
+                      padding: 14,
+                      fontSize: 15,
+                      color: "var(--text-2)",
+                      lineHeight: 1.4,
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={accepted}
+                      onChange={(event) => setAccepted(event.target.checked)}
+                      style={{ width: 22, height: 22, marginTop: 1, accentColor: "var(--blue)", flexShrink: 0 }}
+                    />
+                    <span>
+                      {LEGAL_DISCLAIMERS.signup}{" "}
+                      <a href="/terminos" target="_blank" style={{ color: "var(--blue)", fontWeight: 600 }}>
+                        Términos
+                      </a>{" "}
+                      y{" "}
+                      <a href="/privacidad" target="_blank" style={{ color: "var(--blue)", fontWeight: 600 }}>
+                        Privacidad
+                      </a>
+                      .
+                    </span>
+                  </label>
+
+                  <Btn
+                    type="submit"
+                    size="xl"
+                    variant="success"
+                    icon="whatsapp"
+                    style={{ background: "#25D366", boxShadow: "0 4px 14px rgba(37,211,102,.32)" }}
+                  >
+                    Enviar mis datos por WhatsApp
+                  </Btn>
+                  <p style={{ fontSize: 14, color: "var(--text-2)", textAlign: "center", lineHeight: 1.45 }}>
+                    Apenas confirmemos tu aporte, creamos tu cuenta y te enviamos tu acceso por WhatsApp.
                   </p>
-                </Step>
+                </form>
+              </Card>
 
-                <label className="flex items-start gap-3 rounded-xl border border-border p-4 text-sm">
-                  <input
-                    type="checkbox"
-                    checked={accepted}
-                    onChange={(event) => setAccepted(event.target.checked)}
-                    className="mt-0.5 size-5 shrink-0"
-                  />
-                  <span>
-                    {LEGAL_DISCLAIMERS.signup}{" "}
-                    <a href="/terminos" target="_blank" className="font-medium underline" style={{ color: "var(--tenant-primary)" }}>
-                      Términos
-                    </a>{" "}
-                    y{" "}
-                    <a href="/privacidad" target="_blank" className="font-medium underline" style={{ color: "var(--tenant-primary)" }}>
-                      Privacidad
-                    </a>
-                    .
-                  </span>
-                </label>
+              {/* Beneficios */}
+              <div>
+                <h2 style={{ fontSize: 21, marginBottom: 2 }}>Todo lo que tendrás incluido</h2>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12, marginTop: 12 }}>
+                  {INCLUDED_FEATURES.map((f) => (
+                    <Card key={f.title} pad={14} style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                      <IconCircle icon={f.icon} tone={f.tone} size={44} />
+                      <div>
+                        <div style={{ fontFamily: "var(--font-head)", fontWeight: 600, fontSize: 16, lineHeight: 1.2 }}>
+                          {f.title}
+                        </div>
+                        <p style={{ fontSize: 14, color: "var(--text-2)", marginTop: 3, lineHeight: 1.35 }}>{f.desc}</p>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              </div>
 
-                <Button
-                  type="submit"
-                  size="lg"
-                  className="h-14 w-full bg-[#25D366] text-base font-semibold text-white hover:bg-[#1ebe5b]"
-                >
-                  <MessageCircle className="size-6" />
-                  Enviar mis datos por WhatsApp
-                </Button>
-                <p className="text-center text-sm text-muted-foreground">
-                  Apenas confirmemos tu aporte, creamos tu cuenta y te enviamos tu
-                  usuario y contraseña por WhatsApp.
+              {/* Qué cubre el aporte */}
+              <Card pad={18} style={{ background: "var(--blue-soft)", border: "1px solid var(--blue-tint)" }}>
+                <h3 style={{ fontSize: 18, display: "flex", alignItems: "center", gap: 8 }}>
+                  <Icon name="sparkles" size={22} color="var(--blue)" />
+                  Tu aporte de S/ {PAYMENT.pricePen} al mes
+                </h3>
+                <p style={{ fontSize: 15, color: "var(--text-2)", marginTop: 8, lineHeight: 1.5 }}>
+                  No es un cobro por usar la plataforma: es lo que la mantiene viva y al día. Tu aporte sostiene:
                 </p>
-              </form>
-            )}
-          </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 9, marginTop: 12 }}>
+                  {CONTRIBUTION_COVERS.map((item) => (
+                    <div key={item} style={{ display: "flex", gap: 9, alignItems: "flex-start", fontSize: 15, lineHeight: 1.4 }}>
+                      <Icon name="checkCircle" size={20} color="var(--blue)" style={{ flexShrink: 0, marginTop: 1 }} />
+                      <span>{item}</span>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+
+              {/* Avisos legales */}
+              <Note tone="orange" icon="shield">{LEGAL_DISCLAIMERS.sales}</Note>
+              <Note tone="gray" icon="shield">
+                NetScale es una plataforma independiente. No somos {business.name} ni su
+                representante; cada negocio es responsable de su propia actividad. No buscamos
+                suplantar al negocio ni apropiarnos de su nombre, logo o identidad: los mostramos
+                solo para indicar a qué comunidad te unes.
+              </Note>
+
+              {/* Footer NetScale */}
+              <div style={{ display: "flex", justifyContent: "center", paddingTop: 6 }}>
+                <Logo size={17} />
+              </div>
+            </>
+          )}
         </div>
-      </section>
-    </main>
+      </div>
+    </div>
   );
 }
 
 function Step({
-  number,
+  n,
   title,
   last,
   children,
 }: {
-  number: number;
+  n: number;
   title: string;
   last?: boolean;
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex gap-4">
-      <div className="flex flex-col items-center">
-        <div
-          className="flex size-9 shrink-0 items-center justify-center rounded-full text-base font-bold text-white"
-          style={{ background: "var(--tenant-primary)" }}
+    <div style={{ display: "flex", gap: 14 }}>
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+        <span
+          style={{
+            width: 34,
+            height: 34,
+            borderRadius: 999,
+            background: "var(--blue)",
+            color: "#fff",
+            display: "grid",
+            placeItems: "center",
+            fontFamily: "var(--font-head)",
+            fontWeight: 700,
+            fontSize: 16,
+            flexShrink: 0,
+          }}
         >
-          {number}
-        </div>
-        {!last ? <div className="mt-1 w-px flex-1 bg-border" /> : null}
+          {n}
+        </span>
+        {!last && <span style={{ width: 2, flex: 1, background: "var(--border)", marginTop: 4 }} />}
       </div>
-      <div className="flex-1 pb-1">
-        <h3 className="mb-2 text-lg font-semibold leading-tight">{title}</h3>
+      <div style={{ flex: 1, paddingBottom: last ? 0 : 2 }}>
+        <h3 style={{ fontSize: 17, marginBottom: 8 }}>{title}</h3>
         {children}
       </div>
     </div>
   );
 }
 
-function RegistrationDone({
-  businessName,
-  waUrl,
-}: {
-  businessName: string;
-  waUrl: string;
-}) {
+function RegistrationDone({ businessName, waUrl }: { businessName: string; waUrl: string }) {
+  const steps = [
+    `Paga S/ ${PAYMENT.pricePen} por Yape al ${PAYMENT.yapeDisplay}.`,
+    "Envíanos la captura por WhatsApp.",
+    "Creamos tu cuenta y te enviamos tu acceso.",
+  ];
   return (
-    <div className="py-4 text-center">
-      <div
-        className="mx-auto flex size-16 items-center justify-center rounded-full text-white"
-        style={{ background: "#25D366" }}
+    <Card pad={22} style={{ textAlign: "center" }}>
+      <span
+        style={{
+          width: 68,
+          height: 68,
+          borderRadius: 999,
+          background: "#25D366",
+          display: "grid",
+          placeItems: "center",
+          margin: "0 auto",
+          boxShadow: "0 6px 18px rgba(37,211,102,.32)",
+        }}
       >
-        <MessageCircle className="size-9" />
-      </div>
-      <h2 className="mt-5 font-display text-2xl font-bold sm:text-3xl">
-        ¡Ya casi terminas!
-      </h2>
-      <p className="mt-3 leading-relaxed text-muted-foreground">
-        Te abrimos WhatsApp para enviar tu mensaje a {businessName}. Ahí solo
-        debes <span className="font-semibold text-foreground">adjuntar la captura de tu pago por Yape</span> y enviarlo.
+        <Icon name="whatsapp" size={34} />
+      </span>
+      <h2 style={{ fontSize: 24, marginTop: 16 }}>¡Ya casi terminas!</h2>
+      <p style={{ fontSize: 16, color: "var(--text-2)", marginTop: 10, lineHeight: 1.5 }}>
+        Te abrimos WhatsApp para enviar tu mensaje a {businessName}. Ahí solo{" "}
+        <strong style={{ color: "var(--text)" }}>adjunta la captura de tu pago por Yape</strong> y envíalo.
       </p>
-
-      <ol className="mx-auto mt-6 max-w-sm space-y-3 text-left">
-        <li className="flex gap-3">
-          <CheckCircle2 className="mt-0.5 size-6 shrink-0" style={{ color: "var(--tenant-primary)" }} />
-          <span>Paga S/ {PAYMENT.pricePen} por Yape al {PAYMENT.yapeDisplay}.</span>
-        </li>
-        <li className="flex gap-3">
-          <CheckCircle2 className="mt-0.5 size-6 shrink-0" style={{ color: "var(--tenant-primary)" }} />
-          <span>Envíanos la captura por WhatsApp.</span>
-        </li>
-        <li className="flex gap-3">
-          <CheckCircle2 className="mt-0.5 size-6 shrink-0" style={{ color: "var(--tenant-primary)" }} />
-          <span>Creamos tu cuenta y te enviamos tu acceso por WhatsApp.</span>
-        </li>
-      </ol>
-
+      <div style={{ display: "flex", flexDirection: "column", gap: 11, marginTop: 18, textAlign: "left" }}>
+        {steps.map((t) => (
+          <div key={t} style={{ display: "flex", gap: 10, alignItems: "flex-start", fontSize: 16, lineHeight: 1.4 }}>
+            <Icon name="checkCircle" size={22} color="var(--green)" style={{ flexShrink: 0, marginTop: 1 }} />
+            <span>{t}</span>
+          </div>
+        ))}
+      </div>
       {waUrl ? (
         <a
           href={waUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="mt-7 inline-flex h-14 w-full items-center justify-center gap-2 rounded-[var(--radius-md)] bg-[#25D366] text-base font-semibold text-white transition-colors hover:bg-[#1ebe5b]"
+          className="ns-press"
+          style={{
+            marginTop: 20,
+            height: 60,
+            borderRadius: "var(--r-btn)",
+            background: "#25D366",
+            color: "#fff",
+            display: "inline-flex",
+            width: "100%",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 10,
+            fontFamily: "var(--font-body)",
+            fontWeight: 600,
+            fontSize: 18,
+          }}
         >
-          <MessageCircle className="size-6" />
+          <Icon name="whatsapp" size={24} />
           ¿No se abrió? Abrir WhatsApp
-          <ArrowRight className="size-5" />
         </a>
       ) : null}
-    </div>
+    </Card>
   );
 }

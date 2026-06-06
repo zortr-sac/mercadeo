@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getRepositories } from "@/data";
-import { Container } from "@/components/layout/page-header";
 import { requireSession } from "@/lib/session";
-import { CourseDetail } from "@/features/academy/course-detail";
+import { buildBlockLessons } from "@/features/academia/build-lessons";
+import { BlockLessonsScreen } from "@/features/academia/block-lessons-screen";
 
 export async function generateMetadata({
   params,
@@ -20,14 +20,15 @@ export default async function CoursePage({
 }: {
   params: Promise<{ courseSlug: string }>;
 }) {
-  await requireSession();
+  const user = await requireSession();
   const { courseSlug } = await params;
-  const course = await getRepositories().academy.getCourseBySlug(courseSlug);
+  const repos = getRepositories();
+  const course = await repos.academy.getCourseBySlug(courseSlug);
   if (!course) notFound();
 
+  const completed = new Set(await repos.academy.getCompletedLessonIds(user.id));
+  const { items, summary } = buildBlockLessons([course], completed);
   return (
-    <Container>
-      <CourseDetail course={course} />
-    </Container>
+    <BlockLessonsScreen title={course.title} summary={summary} items={items} course={course} />
   );
 }

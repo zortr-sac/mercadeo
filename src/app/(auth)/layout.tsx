@@ -1,11 +1,6 @@
-export default function AuthLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="flex min-h-dvh flex-col items-center justify-center bg-[#0f2f2c] px-4 py-10">
-      {children}
-    </div>
-  );
+import { NetScaleShell } from "@/components/netscale/shell";
+
+/** Public auth screens (welcome, login) — NetScale mobile shell, no bottom nav. */
+export default function AuthLayout({ children }: { children: React.ReactNode }) {
+  return <NetScaleShell nav={false}>{children}</NetScaleShell>;
 }

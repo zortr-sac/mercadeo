@@ -4,11 +4,11 @@ import { revalidatePath } from "next/cache";
 import { getRepositories } from "@/data";
 import type { CoursePatch, LessonPatch } from "@/data/repositories";
 import type { Course, CourseLevel, Lesson, LessonType } from "@/data/types";
-import { adminBusinessPath } from "@/lib/constants";
+import { academyBasePath } from "@/lib/constants";
 import { requireBusinessAdmin } from "@/lib/session";
 
 function revalidate(businessId: string) {
-  revalidatePath(adminBusinessPath(businessId, "academia"));
+  revalidatePath(academyBasePath(businessId));
 }
 
 export async function createCourseAction(

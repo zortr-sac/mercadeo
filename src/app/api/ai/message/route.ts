@@ -6,7 +6,9 @@ import {
   makeSafeAlternative,
 } from "@/lib/ai/compliance";
 import { generateWithGemini } from "@/lib/ai/gemini";
+import { assertWithinBudget, recordAiUsage } from "@/lib/ai/usage";
 import { LEGAL_DISCLAIMERS } from "@/lib/constants";
+import { requireSession } from "@/lib/session";
 
 const requestSchema = z.object({
   idempotencyKey: z.string().min(8),
@@ -18,6 +20,8 @@ const requestSchema = z.object({
   complianceHint: z.string().max(300).default(""),
   tone: z.enum(["calm", "warm", "direct", "reactivation"]),
   userInstruction: z.string().max(500).default(""),
+  // Instrucciones por mensaje que define el admin (se suman al SYSTEM_PROMPT base).
+  systemPrompt: z.string().max(2000).default(""),
 });
 
 const TONE_LABELS: Record<string, string> = {
@@ -47,6 +51,7 @@ ESTILO DEL MENSAJE:
 Devuelve UNICAMENTE el texto del mensaje listo para enviar, sin comillas, sin titulos y sin explicaciones.`;
 
 export async function POST(request: Request) {
+  const user = await requireSession();
   const json = await request.json().catch(() => null);
   const parsed = requestSchema.safeParse(json);
 
@@ -58,6 +63,12 @@ export async function POST(request: Request) {
   }
 
   const input = parsed.data;
+
+  // Presupuesto mensual de IA: si ya alcanzó su límite, bloquea (popup de WhatsApp).
+  const budget = await assertWithinBudget(user.businessId, user.id);
+  if (!budget.ok) {
+    return NextResponse.json({ error: "ai_limit" }, { status: 429 });
+  }
   const toneLabel = TONE_LABELS[input.tone] ?? "cercano";
 
   // Revisa el material que entra (situacion / contexto) por si trae frases de riesgo.
@@ -79,14 +90,30 @@ export async function POST(request: Request) {
     .filter(Boolean)
     .join("\n");
 
+  // El cumplimiento legal base SIEMPRE aplica; el system prompt del mensaje se suma encima.
+  const system = input.systemPrompt
+    ? `${SYSTEM_PROMPT}\n\n--- Instrucciones de este mensaje ---\n${input.systemPrompt}`
+    : SYSTEM_PROMPT;
+
   const generated = await generateWithGemini({
-    system: SYSTEM_PROMPT,
+    system,
     prompt: userPrompt,
     temperature: 0.75,
     maxOutputTokens: 320,
   });
 
   const source = generated ? "gemini" : "fallback";
+
+  if (generated) {
+    await recordAiUsage({
+      businessId: user.businessId,
+      userId: user.id,
+      endpoint: "message",
+      model: generated.model,
+      usage: generated.usage,
+      idempotencyKey: input.idempotencyKey,
+    });
+  }
 
   // Mensaje base: IA real si esta disponible, si no el generador determinista.
   let message =

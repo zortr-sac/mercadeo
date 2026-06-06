@@ -58,7 +58,7 @@ export function InstallPrompt() {
           <Download className="size-5" />
         </span>
         <div className="flex-1">
-          <p className="font-semibold">Instala Nexo Mentor</p>
+          <p className="font-semibold">Instala NetScale</p>
           <p className="text-muted-foreground">
             Anade la PWA a tu pantalla de inicio para acceso rapido y uso sin
             conexion.
